@@ -1,0 +1,19 @@
+# Copy this file to config.yaml and customize for your environment
+
+# Database Configuration (example)
+# database:
+#   host: localhost
+#   port: 5432
+#   username: your_username
+#   password: your_password
+#   database_name: your_database
+#   pool_size: 10
+#   pool_max_overflow: 20
+
+
+logging:
+  level: INFO
+  use_colors: true
+  console_output: true
+  file_output: true
+  format_type: detailed

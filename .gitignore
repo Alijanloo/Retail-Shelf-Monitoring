@@ -1,0 +1,11 @@
+data
+logs
+
+.env
+config.yaml
+config.ini
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
