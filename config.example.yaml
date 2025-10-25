@@ -1,19 +1,22 @@
 # Copy this file to config.yaml and customize for your environment
 
-# Database Configuration (example)
-# database:
-#   host: localhost
-#   port: 5432
-#   username: your_username
-#   password: your_password
-#   database_name: your_database
-#   pool_size: 10
-#   pool_max_overflow: 20
+app_name: "Retail Shelf Monitoring"
+debug: false
 
+database:
+  host: "localhost"
+  port: 5432
+  database: "retail_shelf_monitoring"
+  user: "postgres"
+  password: "postgres"
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null
 
 logging:
   level: INFO
-  use_colors: true
-  console_output: true
-  file_output: true
-  format_type: detailed
+  format: json
+  file_path: null
