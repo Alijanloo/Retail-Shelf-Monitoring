@@ -1,10 +1,16 @@
+from datetime import timedelta
+
 from dependency_injector import containers, providers
+from redis import Redis
 
 from .adaptors.grid.grid_detector import GridDetector
+from .adaptors.messaging.alert_publisher import AlertPublisher
+from .adaptors.messaging.redis_stream import RedisStreamClient
 from .adaptors.ml.sku_mapper import SKUMapper
 from .adaptors.ml.yolo_detector import YOLOv11Detector
 from .adaptors.preprocessing.image_processing import ImageProcessor
 from .adaptors.preprocessing.stabilization import MotionStabilizer
+from .adaptors.repositories.postgres_alert_repository import PostgresAlertRepository
 from .adaptors.repositories.postgres_detection_repository import (
     PostgresDetectionRepository,
 )
@@ -23,12 +29,14 @@ from .frameworks.database import DatabaseManager
 from .frameworks.logging_config import get_logger
 from .frameworks.streaming.frame_buffer import FrameBuffer
 from .frameworks.streaming.stream_manager import StreamManager
+from .usecases.alert_generation import AlertGenerationUseCase, AlertManagementUseCase
 from .usecases.cell_state_computation import CellStateComputation
 from .usecases.detection_processing import DetectionProcessingUseCase
 from .usecases.planogram_generation import PlanogramGenerationUseCase
 from .usecases.shelf_localization import ShelfLocalizationUseCase
 from .usecases.shelf_management import ShelfManagementUseCase
 from .usecases.stream_processing import StreamProcessingUseCase
+from .usecases.temporal_consensus import TemporalConsensusManager
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -159,6 +167,56 @@ class ApplicationContainer(containers.DeclarativeContainer):
         grid_detector=grid_detector,
         position_tolerance=config.provided.grid.position_tolerance,
         confidence_threshold=config.provided.ml.confidence_threshold,
+    )
+
+    redis_client = providers.Singleton(
+        Redis,
+        host=config.provided.redis.host,
+        port=config.provided.redis.port,
+        db=config.provided.redis.db,
+        password=config.provided.redis.password,
+        decode_responses=False,
+    )
+
+    alert_publisher = providers.Singleton(
+        AlertPublisher,
+        redis_client=redis_client,
+        stream_name=config.provided.alerting.stream_name,
+    )
+
+    redis_stream_client = providers.Singleton(
+        RedisStreamClient,
+        redis_client=redis_client,
+        stream_name=config.provided.alerting.stream_name,
+        consumer_group=config.provided.alerting.consumer_group,
+        consumer_name=config.provided.alerting.consumer_name,
+    )
+
+    alert_repository = providers.Factory(
+        PostgresAlertRepository,
+        session_factory=database_manager.provided.get_session,
+    )
+
+    temporal_consensus_manager = providers.Singleton(
+        TemporalConsensusManager,
+        n_confirm=config.provided.alerting.n_confirm,
+        n_clear=config.provided.alerting.n_clear,
+        state_timeout=providers.Factory(
+            timedelta, seconds=config.provided.alerting.state_timeout
+        ),
+    )
+
+    alert_generation_usecase = providers.Factory(
+        AlertGenerationUseCase,
+        alert_repository=alert_repository,
+        shelf_repository=shelf_repository,
+        alert_publisher=alert_publisher,
+    )
+
+    alert_management_usecase = providers.Factory(
+        AlertManagementUseCase,
+        alert_repository=alert_repository,
+        alert_publisher=alert_publisher,
     )
 
 
