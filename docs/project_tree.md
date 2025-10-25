@@ -28,14 +28,17 @@ retail_shelf_monitoring/
 │   ├── stream_processing.py    ✅ Stream processing orchestration (Phase 3)
 │   ├── shelf_localization.py   ✅ Shelf localization use case (Phase 3)
 │   ├── detection_processing.py ✅ Detection processing orchestration (Phase 4)
-│   └── cell_state_computation.py ✅ Cell state computation (Phase 4)
+│   ├── cell_state_computation.py ✅ Cell state computation (Phase 4)
+│   ├── temporal_consensus.py   ✅ Temporal consensus manager (Phase 5)
+│   └── alert_generation.py     ✅ Alert generation & management (Phase 5)
 ├── adaptors/
 │   ├── __init__.py
 │   ├── repositories/
 │   │   ├── __init__.py
 │   │   ├── postgres_shelf_repository.py      ✅ Shelf repository impl
 │   │   ├── postgres_planogram_repository.py  ✅ Planogram repository impl
-│   │   └── postgres_detection_repository.py  ✅ Detection repository impl (Phase 4)
+│   │   ├── postgres_detection_repository.py  ✅ Detection repository impl (Phase 4)
+│   │   └── postgres_alert_repository.py      ✅ Alert repository impl (Phase 5)
 │   ├── ml/
 │   │   ├── __init__.py
 │   │   ├── model_loader.py    ✅ OpenVINO model loader
@@ -59,10 +62,14 @@ retail_shelf_monitoring/
 │   │   ├── feature_matcher.py ✅ ORB/SIFT feature matching
 │   │   ├── homography.py      ✅ Homography computation
 │   │   └── image_aligner.py   ✅ Image alignment/warping
-│   └── preprocessing/         ✅ Phase 3: Image preprocessing
+│   ├── preprocessing/         ✅ Phase 3: Image preprocessing
 │       ├── __init__.py
 │       ├── stabilization.py   ✅ Motion stabilization
 │       └── image_processing.py ✅ General preprocessing
+│   └── messaging/             ✅ Phase 5: Redis Streams messaging
+│       ├── __init__.py
+│       ├── redis_stream.py    ✅ Redis Stream client
+│       └── alert_publisher.py ✅ Alert publishing
 ├── frameworks/
 │   ├── __init__.py
 │   ├── logging_config.py   ✅ Logging framework
@@ -85,6 +92,8 @@ tests/
 │   │   ├── test_planogram.py   ✅ Planogram tests
 │   │   ├── test_detection.py   ✅ Detection tests
 │   │   └── test_alert.py       ✅ Alert tests
+│   ├── usecases/
+│   │   └── test_temporal_consensus.py ✅ Temporal consensus tests (Phase 5)
 │   └── adaptors/
 │       ├── __init__.py
 │       ├── test_clustering.py      ✅ Clustering algorithm tests
@@ -93,60 +102,4 @@ tests/
 │           ├── test_feature_matcher.py
 │           ├── test_homography.py
 │           └── test_stream_processing.py
-└── integration/            ⏳ TODO: Phase 2-4 integration tests
-
-## Phase 4 Completion Status
-
-### ✅ Completed Components
-
-1. **Tracking Infrastructure**
-   - `adaptors/tracking/tracker_interface.py` - Abstract tracker interface
-   - `adaptors/tracking/bytetrack.py` - SimpleTracker with IoU-based matching
-   - Track management with configurable thresholds
-
-2. **SKU Mapping**
-   - `adaptors/ml/sku_mapper.py` - Class ID to SKU identifier mapping
-   - JSON configuration support
-   - Bidirectional mapping (class↔SKU)
-
-3. **Detection Processing**
-   - `usecases/detection_processing.py` - Detection orchestration use case
-   - Integration of detector + tracker + SKU mapper
-   - Batch persistence to database
-
-4. **Cell State Computation**
-   - `usecases/cell_state_computation.py` - Grid matching logic
-   - Cell state determination (OK/EMPTY/MISPLACED)
-   - Summary statistics generation
-
-5. **Detection Repository**
-   - `adaptors/repositories/postgres_detection_repository.py` - PostgreSQL persistence
-   - Batch operations for performance
-   - Cell-based and temporal queries
-
-6. **Configuration & DI**
-   - Updated `config.yaml` with tracking parameters
-   - Updated `container.py` with Phase 4 providers
-   - Example SKU mapping file
-
-7. **Demo & Documentation**
-   - `examples/phase4_demo.py` - Complete Phase 4 demonstration
-   - `data/sku_mapping.json` - Example SKU mapping
-   - Updated project tree documentation
-
-### 🎯 Key Features
-
-- **Object Tracking**: Maintain detection consistency across frames
-- **Grid Matching**: Match current detections against reference planogram
-- **Cell States**: Determine product availability and placement status
-- **Batch Operations**: Optimized database persistence
-- **SKU Mapping**: Flexible class-to-product mapping
-- **Temporal Queries**: Retrieve detection history by cell
-
-### 📊 Architecture
-
-```
-Aligned Frame → YOLO Detection → Tracking → SKU Mapping →
-Detection Entities → Grid Matching → Cell States →
-Database Persistence
-```
+└── integration/            ⏳ TODO: Phase 2-5 integration tests
