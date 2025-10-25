@@ -1,8 +1,5 @@
 from typing import List
 
-from dependency_injector.wiring import Provide, inject
-
-from ..container import ApplicationContainer
 from ..entities.shelf import Shelf
 from ..frameworks.exceptions import EntityNotFoundError
 from ..frameworks.logging_config import get_logger
@@ -12,12 +9,9 @@ logger = get_logger(__name__)
 
 
 class ShelfManagementUseCase:
-    @inject
     def __init__(
         self,
-        shelf_repository: ShelfRepository = Provide[
-            ApplicationContainer.shelf_repository
-        ],
+        shelf_repository: ShelfRepository,
     ):
         self.shelf_repository = shelf_repository
 

@@ -2,11 +2,9 @@ from pathlib import Path
 from typing import Optional
 
 import cv2
-from dependency_injector.wiring import Provide, inject
 
 from ..adaptors.grid.grid_detector import GridDetector
 from ..adaptors.ml.yolo_detector import YOLOv11Detector
-from ..container import ApplicationContainer
 from ..entities.planogram import Planogram
 from ..frameworks.exceptions import EntityNotFoundError, ValidationError
 from ..frameworks.logging_config import get_logger
@@ -16,17 +14,12 @@ logger = get_logger(__name__)
 
 
 class PlanogramGenerationUseCase:
-    @inject
     def __init__(
         self,
-        shelf_repository: ShelfRepository = Provide[
-            ApplicationContainer.shelf_repository
-        ],
-        planogram_repository: PlanogramRepository = Provide[
-            ApplicationContainer.planogram_repository
-        ],
-        detector: YOLOv11Detector = Provide[ApplicationContainer.yolo_detector],
-        grid_detector: GridDetector = Provide[ApplicationContainer.grid_detector],
+        shelf_repository: ShelfRepository,
+        planogram_repository: PlanogramRepository,
+        detector: YOLOv11Detector,
+        grid_detector: GridDetector,
     ):
         self.shelf_repository = shelf_repository
         self.planogram_repository = planogram_repository
