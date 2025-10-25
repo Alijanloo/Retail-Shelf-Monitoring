@@ -48,13 +48,18 @@ This project follows **Clean Architecture** principles with strict dependency in
 ## 🔧 Core Technologies
 
 ### Backend Stack
-- **Python 3.11**: Modern async/await, type hints, Pydantic 2.0+
+- **Python 3.10+**: Modern async/await, type hints, Pydantic 2.0+
 - **dependency-injector**: Clean dependency injection pattern
 - **SQLAlchemy 2.0+**: Database ORM with async support
 - **PostgreSQL 15+**: Primary database for persistence
 - **Redis 7+**: Caching, message queues, and real-time alerts
-- **FastAPI**: High-performance async web framework
-- **Pydantic**: Data validation and serialization
+
+### Native Desktop UI
+- **PySide6 (Qt6)**: Cross-platform native desktop application framework
+- **Multi-threading**: Qt QThread for capture, inference, and alert processing
+- **Signals/Slots**: Thread-safe UI updates and event communication
+- **Real-time Display**: Live video streaming with detection overlays
+- **Responsive Design**: Native widgets with custom styling (QSS)
 
 ### Computer Vision & ML
 - **YOLOv11**: State-of-the-art object detection for SKU identification
@@ -86,10 +91,9 @@ The system automatically creates planograms from reference shelf images:
 ```
 CCTV Stream → Frame Sampling → Shelf Detection →
 Image Alignment → SKU Detection → Grid Mapping →
-Temporal Consensus → Alert Generation → Dashboard
-```
-
-### Temporal Consensus Algorithm
+Temporal Consensus → Alert Generation →
+Desktop UI (PySide6) → Alert Management
+```### Temporal Consensus Algorithm
 - **Multi-frame validation**: Require N consecutive frames before alerting
 - **Track-based filtering**: Use object tracking to reduce false positives
 - **State machine**: Per-cell state tracking (OK, OOS, MISPLACED)
