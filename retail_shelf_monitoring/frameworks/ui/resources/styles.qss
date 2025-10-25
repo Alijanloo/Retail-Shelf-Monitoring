@@ -1,0 +1,143 @@
+QMainWindow {
+    background-color: #2b2b2b;
+}
+
+QWidget {
+    color: #ffffff;
+    font-family: "Arial";
+    font-size: 11pt;
+}
+
+QGroupBox {
+    border: 2px solid #3d3d3d;
+    border-radius: 5px;
+    margin-top: 1ex;
+    padding: 10px;
+    background-color: #1e1e1e;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    color: #ffffff;
+}
+
+QPushButton {
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    padding: 8px 16px;
+    background-color: #3d3d3d;
+    color: white;
+    min-width: 80px;
+}
+
+QPushButton:hover {
+    background-color: #4d4d4d;
+    border: 1px solid #5d5d5d;
+}
+
+QPushButton:pressed {
+    background-color: #2d2d2d;
+}
+
+QPushButton:disabled {
+    background-color: #1e1e1e;
+    color: #666666;
+}
+
+QLabel {
+    color: #ffffff;
+}
+
+QSpinBox, QComboBox {
+    border: 1px solid #3d3d3d;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+QSpinBox::up-button, QSpinBox::down-button {
+    background-color: #3d3d3d;
+    border: 1px solid #3d3d3d;
+}
+
+QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+    background-color: #4d4d4d;
+}
+
+QComboBox::drop-down {
+    border: 0px;
+    background-color: #3d3d3d;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid #ffffff;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2b2b2b;
+    selection-background-color: #3d3d3d;
+    color: #ffffff;
+    border: 1px solid #3d3d3d;
+}
+
+QCheckBox {
+    spacing: 5px;
+    color: #ffffff;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #3d3d3d;
+    border-radius: 3px;
+    background-color: #1e1e1e;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #28a745;
+    border: 1px solid #28a745;
+}
+
+QListWidget {
+    border: 1px solid #3d3d3d;
+    border-radius: 3px;
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+QListWidget::item {
+    padding: 8px;
+    border-bottom: 1px solid #2b2b2b;
+}
+
+QListWidget::item:selected {
+    background-color: #3d3d3d;
+}
+
+QListWidget::item:hover {
+    background-color: #2d2d2d;
+}
+
+QStatusBar {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-top: 1px solid #3d3d3d;
+}
+
+QSplitter::handle {
+    background-color: #3d3d3d;
+}
+
+QSplitter::handle:horizontal {
+    width: 2px;
+}
+
+QSplitter::handle:vertical {
+    height: 2px;
+}
