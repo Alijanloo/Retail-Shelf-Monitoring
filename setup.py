@@ -7,7 +7,7 @@ with open("requirements.txt", "r", encoding="utf-8") as f:
     requirements = f.read().splitlines()
 
 setup(
-    name="template_project",
+    name="retail_shelf_monitoring",
     version="0.0.1",
     author="Ali Janloo",
     author_email="mahmoodjanlooali@gmail.com",

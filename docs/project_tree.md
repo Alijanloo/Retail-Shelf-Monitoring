@@ -1,4 +1,4 @@
-# Python Project Template Structure
+# Retail Shelf Monitoring Structure
 
 ## Overview
 ...
@@ -6,17 +6,21 @@
 
 ## Core Components
 
-### Entities (`template_project/entities/`)
-- 
+### Entities (`retail_shelf_monitoring/entities/`)
+- shelf.py
+- product.py
 
-### Use Cases (`template_project/usecases/`)
-- 
+### Use Cases (`retail_shelf_monitoring/usecases/`)
+- detect_shelf_changes.py
+- update_inventory.py
 
-### Adaptors (`template_project/adaptors/`)
-- 
+### Adaptors (`retail_shelf_monitoring/adaptors/`)
+- camera_adaptor.py
+- database_adaptor.py
 
-### Frameworks (`template_project/frameworks/`)
--
+### Frameworks (`retail_shelf_monitoring/frameworks/`)
+- logging_config.py
+- application_container.py
 
 ## Methodologies
 ...

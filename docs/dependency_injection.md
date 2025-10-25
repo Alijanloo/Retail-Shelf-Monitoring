@@ -19,7 +19,7 @@ The dependency injection container provides centralized configuration and depend
 A separate test container provides mocked dependencies for testing:
 
 ```python
-from template_project.containers import TestContainer
+from retail_shelf_monitoring.containers import TestContainer
 
 test_container = TestContainer()
 # All dependencies are mocked for isolated testing
@@ -29,8 +29,8 @@ test_container = TestContainer()
 
 ```python
 from dependency_injector.wiring import Provide, inject
-from template_project.containers import ApplicationContainer
-from template_project.usecases.document_indexing import DocumentIndexingUseCase
+from retail_shelf_monitoring.containers import ApplicationContainer
+from retail_shelf_monitoring.usecases.document_indexing import DocumentIndexingUseCase
 
 @inject
 async def index_document(
@@ -53,7 +53,7 @@ await index_document(my_document, "doc_123")
 
 ```python
 import unittest.mock as mock
-from template_project.containers import ApplicationContainer
+from retail_shelf_monitoring.containers import ApplicationContainer
 
 def test_document_indexing():
     container = ApplicationContainer()

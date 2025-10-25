@@ -5,7 +5,7 @@ from typing import Optional
 import sys
 import yaml
 
-from template_project import DEFAULT_PATH
+from retail_shelf_monitoring import DEFAULT_PATH
 
 
 def load_logging_config():
@@ -130,7 +130,7 @@ class LoggerFactory:
             },
             "handlers": {},
             "loggers": {
-                "template_project": {
+                "retail_shelf_monitoring": {
                     "level": log_level,
                     "handlers": [],
                     "propagate": False,
@@ -146,7 +146,7 @@ class LoggerFactory:
                 "formatter": "colored",
                 "stream": "ext://sys.stdout",
             }
-            config["loggers"]["template_project"]["handlers"].append("console")
+            config["loggers"]["retail_shelf_monitoring"]["handlers"].append("console")
             config["loggers"]["root"]["handlers"].append("console")
 
         if file_output:
@@ -154,7 +154,7 @@ class LoggerFactory:
                 "class": "logging.handlers.RotatingFileHandler",
                 "level": log_level,
                 "formatter": "standard",
-                "filename": str(cls._log_dir / "template_project.log"),
+                "filename": str(cls._log_dir / "retail_shelf_monitoring.log"),
                 "maxBytes": 10485760,
                 "backupCount": 5,
             }
@@ -163,12 +163,12 @@ class LoggerFactory:
                 "class": "logging.handlers.RotatingFileHandler",
                 "level": "ERROR",
                 "formatter": "standard",
-                "filename": str(cls._log_dir / "template_project_errors.log"),
+                "filename": str(cls._log_dir / "retail_shelf_monitoring_errors.log"),
                 "maxBytes": 10485760,
                 "backupCount": 5,
             }
 
-            config["loggers"]["template_project"]["handlers"].extend(
+            config["loggers"]["retail_shelf_monitoring"]["handlers"].extend(
                 ["file", "error_file"]
             )
             config["loggers"]["root"]["handlers"].extend(["file", "error_file"])
@@ -176,7 +176,7 @@ class LoggerFactory:
         logging.config.dictConfig(config)
         cls._initialized = True
 
-        logger = logging.getLogger("template_project.logging_config")
+        logger = logging.getLogger("retail_shelf_monitoring.logging_config")
         logger.info(
             f"Logging initialized - Level: {log_level}, Log dir: {cls._log_dir}"
         )
@@ -202,11 +202,11 @@ class LoggerFactory:
                 use_colors=logging_config.get("use_colors", True),
             )
 
-        if not name.startswith("template_project"):
+        if not name.startswith("retail_shelf_monitoring"):
             if name == "__main__":
-                name = "template_project.main"
+                name = "retail_shelf_monitoring.main"
             else:
-                name = f"template_project.{name}"
+                name = f"retail_shelf_monitoring.{name}"
 
         return logging.getLogger(name)
 
