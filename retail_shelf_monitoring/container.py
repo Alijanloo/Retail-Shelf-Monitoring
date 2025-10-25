@@ -1,35 +1,27 @@
 from dependency_injector import containers, providers
+from .frameworks.config import AppConfig
+from .frameworks.database import DatabaseManager
+from .frameworks.logging_config import get_logger
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
-    """Main dependency injection container for the application."""
+    wiring_config = containers.WiringConfiguration(
+        modules=[
+            "retail_shelf_monitoring.__main__",
+        ]
+    )
 
-    # Configuration
-    config = providers.Configuration(yaml_files=["config.yaml"])
+    config = providers.Singleton(AppConfig.from_yaml_or_default)
 
-    # Core Services
-    # Add your service providers here as needed
-    # Example:
-    # database_client = providers.Resource(
-    #     database_client_resource,
-    #     connection_string=config.database.connection_string,
-    # )
+    logger = providers.Singleton(
+        get_logger,
+        name="retail_shelf_monitoring"
+    )
 
-    # Repository Layer
-    # Add your repository providers here
-    # Example:
-    # user_repository = providers.Singleton(
-    #     UserRepository,
-    #     database_client=database_client,
-    # )
-
-    # Service Layer  
-    # Add your service providers here
-    # Example:
-    # user_service = providers.Factory(
-    #     UserService,
-    #     user_repository=user_repository,
-    # )
+    database_manager = providers.Singleton(
+        DatabaseManager,
+        database_url=config.provided.database.url
+    )
 
 
 class TestContainer(containers.DeclarativeContainer):
