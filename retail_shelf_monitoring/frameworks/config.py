@@ -88,6 +88,15 @@ class AlignmentConfig(BaseModel):
     output_dir: str = Field(default="data/aligned_frames")
 
 
+class AlertingConfig(BaseModel):
+    stream_name: str = Field(default="alerts")
+    consumer_group: str = Field(default="alert_processors")
+    consumer_name: str = Field(default="processor_1")
+    n_confirm: int = Field(default=3, ge=1)
+    n_clear: int = Field(default=2, ge=1)
+    state_timeout: int = Field(default=300, ge=1)
+
+
 class AppConfig(BaseModel):
     app_name: str = Field(default="Retail Shelf Monitoring")
     debug: bool = Field(default=False)
@@ -103,6 +112,7 @@ class AppConfig(BaseModel):
     )
     homography: HomographyConfig = Field(default_factory=HomographyConfig)
     alignment: AlignmentConfig = Field(default_factory=AlignmentConfig)
+    alerting: AlertingConfig = Field(default_factory=AlertingConfig)
 
     @classmethod
     def from_yaml(cls, config_path: str) -> "AppConfig":
