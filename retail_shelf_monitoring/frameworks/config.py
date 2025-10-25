@@ -50,6 +50,14 @@ class GridConfig(BaseModel):
     clustering_method: str = Field(default="dbscan")
     eps: float = Field(default=15.0, gt=0)
     min_samples: int = Field(default=2, ge=1)
+    position_tolerance: int = Field(default=1, ge=0)
+
+
+class TrackingConfig(BaseModel):
+    track_thresh: float = Field(default=0.5, ge=0, le=1)
+    match_thresh: float = Field(default=0.3, ge=0, le=1)
+    max_age: int = Field(default=30, ge=1)
+    sku_mapping_file: Optional[str] = Field(default=None)
 
 
 class StreamingConfig(BaseModel):
@@ -88,6 +96,7 @@ class AppConfig(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     ml: MLConfig = Field(default_factory=MLConfig)
     grid: GridConfig = Field(default_factory=GridConfig)
+    tracking: TrackingConfig = Field(default_factory=TrackingConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
     feature_matching: FeatureMatchingConfig = Field(
         default_factory=FeatureMatchingConfig

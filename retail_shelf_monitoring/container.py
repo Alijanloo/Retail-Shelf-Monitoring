@@ -1,13 +1,18 @@
 from dependency_injector import containers, providers
 
 from .adaptors.grid.grid_detector import GridDetector
+from .adaptors.ml.sku_mapper import SKUMapper
 from .adaptors.ml.yolo_detector import YOLOv11Detector
 from .adaptors.preprocessing.image_processing import ImageProcessor
 from .adaptors.preprocessing.stabilization import MotionStabilizer
+from .adaptors.repositories.postgres_detection_repository import (
+    PostgresDetectionRepository,
+)
 from .adaptors.repositories.postgres_planogram_repository import (
     PostgresPlanogramRepository,
 )
 from .adaptors.repositories.postgres_shelf_repository import PostgresShelfRepository
+from .adaptors.tracking.bytetrack import SimpleTracker
 from .adaptors.video.frame_extractor import FrameExtractor
 from .adaptors.video.keyframe_selector import KeyframeSelector
 from .adaptors.vision.feature_matcher import FeatureMatcher
@@ -18,6 +23,8 @@ from .frameworks.database import DatabaseManager
 from .frameworks.logging_config import get_logger
 from .frameworks.streaming.frame_buffer import FrameBuffer
 from .frameworks.streaming.stream_manager import StreamManager
+from .usecases.cell_state_computation import CellStateComputation
+from .usecases.detection_processing import DetectionProcessingUseCase
 from .usecases.planogram_generation import PlanogramGenerationUseCase
 from .usecases.shelf_localization import ShelfLocalizationUseCase
 from .usecases.shelf_management import ShelfManagementUseCase
@@ -41,6 +48,22 @@ class ApplicationContainer(containers.DeclarativeContainer):
     planogram_repository = providers.Factory(
         PostgresPlanogramRepository,
         session_factory=database_manager.provided.get_session,
+    )
+
+    detection_repository = providers.Factory(
+        PostgresDetectionRepository,
+        session_factory=database_manager.provided.get_session,
+    )
+
+    tracker = providers.Singleton(
+        SimpleTracker,
+        track_thresh=config.provided.tracking.track_thresh,
+        match_thresh=config.provided.tracking.match_thresh,
+        max_age=config.provided.tracking.max_age,
+    )
+
+    sku_mapper = providers.Singleton(
+        SKUMapper, mapping_file=config.provided.tracking.sku_mapping_file
     )
 
     yolo_detector = providers.Singleton(
@@ -121,6 +144,21 @@ class ApplicationContainer(containers.DeclarativeContainer):
 
     shelf_localization_usecase = providers.Factory(
         ShelfLocalizationUseCase, shelf_aligner=shelf_aligner
+    )
+
+    detection_processing_usecase = providers.Factory(
+        DetectionProcessingUseCase,
+        detector=yolo_detector,
+        tracker=tracker,
+        sku_mapper=sku_mapper,
+        detection_repository=detection_repository,
+    )
+
+    cell_state_computation = providers.Factory(
+        CellStateComputation,
+        grid_detector=grid_detector,
+        position_tolerance=config.provided.grid.position_tolerance,
+        confidence_threshold=config.provided.ml.confidence_threshold,
     )
 
 
