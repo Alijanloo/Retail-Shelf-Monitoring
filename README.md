@@ -84,8 +84,8 @@ The system automatically creates planograms from reference shelf images:
 
 ### Real-Time Monitoring Pipeline
 ```
-CCTV Stream → Frame Sampling → Shelf Detection → 
-Image Alignment → SKU Detection → Grid Mapping → 
+CCTV Stream → Frame Sampling → Shelf Detection →
+Image Alignment → SKU Detection → Grid Mapping →
 Temporal Consensus → Alert Generation → Dashboard
 ```
 

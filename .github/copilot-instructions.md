@@ -1,9 +1,9 @@
 ## Instructions
 
-* When implementing/refactoring modules, adhere to the Clean Architecture Instructions provided 
+* When implementing/refactoring modules, adhere to the Clean Architecture Instructions provided
 in `.github/clean_architecture_instructions.md`
 
-* You can find the information and details of the current project state in `docs/project_tree.md`. 
+* You can find the information and details of the current project state in `docs/project_tree.md`.
 Keep this file update with the last changes.
 
 * Use the `uv` package manager:

@@ -1,5 +1,7 @@
-import pytest
 from datetime import datetime
+
+import pytest
+
 from retail_shelf_monitoring.entities.alert import Alert
 from retail_shelf_monitoring.entities.common import AlertType, Priority
 
@@ -14,7 +16,7 @@ class TestAlert:
             alert_type=AlertType.OOS,
             expected_sku="SKU-123",
             first_seen=now,
-            last_seen=now
+            last_seen=now,
         )
         assert alert.shelf_id == "SHELF-001"
         assert alert.row_idx == 0
@@ -34,7 +36,7 @@ class TestAlert:
             expected_sku="SKU-123",
             detected_sku="SKU-456",
             first_seen=now,
-            last_seen=now
+            last_seen=now,
         )
         assert alert.alert_type == AlertType.MISPLACEMENT
         assert alert.detected_sku == "SKU-456"
@@ -48,14 +50,16 @@ class TestAlert:
             alert_type=AlertType.OOS,
             priority=Priority.CRITICAL,
             first_seen=now,
-            last_seen=now
+            last_seen=now,
         )
         assert alert.priority == Priority.CRITICAL
 
     def test_alert_confirmation_validation(self):
         now = datetime.utcnow()
-        
-        with pytest.raises(ValueError, match="confirmed_at can only be set when confirmed is True"):
+
+        with pytest.raises(
+            ValueError, match="confirmed_at can only be set when confirmed is True"
+        ):
             Alert(
                 shelf_id="SHELF-001",
                 row_idx=0,
@@ -64,13 +68,15 @@ class TestAlert:
                 first_seen=now,
                 last_seen=now,
                 confirmed=False,
-                confirmed_at=now
+                confirmed_at=now,
             )
 
     def test_alert_confirmed_by_validation(self):
         now = datetime.utcnow()
-        
-        with pytest.raises(ValueError, match="confirmed_by can only be set when confirmed is True"):
+
+        with pytest.raises(
+            ValueError, match="confirmed_by can only be set when confirmed is True"
+        ):
             Alert(
                 shelf_id="SHELF-001",
                 row_idx=0,
@@ -79,7 +85,7 @@ class TestAlert:
                 first_seen=now,
                 last_seen=now,
                 confirmed=False,
-                confirmed_by="STAFF-001"
+                confirmed_by="STAFF-001",
             )
 
     def test_alert_confirmed(self):
@@ -93,7 +99,7 @@ class TestAlert:
             last_seen=now,
             confirmed=True,
             confirmed_by="STAFF-001",
-            confirmed_at=now
+            confirmed_at=now,
         )
         assert alert.confirmed is True
         assert alert.confirmed_by == "STAFF-001"
@@ -109,7 +115,7 @@ class TestAlert:
             alert_type=AlertType.OOS,
             first_seen=now,
             last_seen=now,
-            evidence_paths=evidence
+            evidence_paths=evidence,
         )
         assert alert.evidence_paths == evidence
 
@@ -122,6 +128,6 @@ class TestAlert:
             alert_type=AlertType.OOS,
             first_seen=now,
             last_seen=now,
-            consecutive_frames=5
+            consecutive_frames=5,
         )
         assert alert.consecutive_frames == 5

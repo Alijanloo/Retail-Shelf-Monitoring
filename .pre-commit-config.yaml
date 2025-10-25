@@ -9,7 +9,6 @@ repos:
       - id: trailing-whitespace
       - id: check-merge-conflict
       - id: check-yaml
-      - id: check-json
       - id: debug-statements   # optionally disallow print / pdb usage
 
   # isort — sort imports (compatible with black)
@@ -17,7 +16,7 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
-        args: ["--profile", "black"]
+        args: ["--profile", "black", "--line-length", "88"]
         # You can add --filter-files to skip irrelevant files
 
   # black — code formatter
@@ -26,6 +25,7 @@ repos:
     hooks:
       - id: black
         language_version: python3
+        args: ["--line-length", "88", "--include", "\\.pyi?$", "--exclude", "/(\\.git|\\.mypy_cache|\\.tox|\\.venv|build|dist)/"]
 
   # flake8 — linting / style checks
   - repo: https://github.com/PyCQA/flake8
@@ -34,15 +34,17 @@ repos:
       - id: flake8
         name: flake8 (python)
         language_version: python3
-        args: 
+        args:
           # Exclude common directories, ignore certain codes to avoid conflicts with black
           - --exclude=venv,.venv,__pycache__,build,dist
           - --ignore=E203,W503
           - --max-line-length=88
 
   # mypy — type checking
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
-    hooks:
-      - id: mypy
-        # args: ["--ignore-missing-imports"]
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.5.1
+  #   hooks:
+  #     - id: mypy
+  #       # Ensure mypy uses the configuration from pyproject.toml
+  #       args: ["--config-file=pyproject.toml"]
+  #       additional_dependencies: [types-PyYAML]

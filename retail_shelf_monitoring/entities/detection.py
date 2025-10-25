@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field, validator
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, Field, validator
+
 from .common import BoundingBox
 
 
@@ -12,13 +14,21 @@ class Detection(BaseModel):
     class_id: int = Field(..., ge=0, description="Detected class ID")
     sku_id: Optional[str] = Field(None, description="SKU identifier if mapped")
     confidence: float = Field(..., ge=0, le=1, description="Detection confidence")
-    track_id: Optional[int] = Field(None, description="Tracker ID for temporal consistency")
-    row_idx: Optional[int] = Field(None, ge=0, description="Assigned planogram row index")
-    item_idx: Optional[int] = Field(None, ge=0, description="Assigned planogram item index")
-    aligned_frame_path: Optional[str] = Field(None, description="Path to aligned frame image")
+    track_id: Optional[int] = Field(
+        None, description="Tracker ID for temporal consistency"
+    )
+    row_idx: Optional[int] = Field(
+        None, ge=0, description="Assigned planogram row index"
+    )
+    item_idx: Optional[int] = Field(
+        None, ge=0, description="Assigned planogram item index"
+    )
+    aligned_frame_path: Optional[str] = Field(
+        None, description="Path to aligned frame image"
+    )
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    @validator('confidence')
+    @validator("confidence")
     def confidence_reasonable(cls, v):
         if v < 0.1:
             raise ValueError(f"Detection confidence {v} is unreasonably low (< 0.1)")
@@ -26,6 +36,4 @@ class Detection(BaseModel):
 
     class Config:
         frozen = False
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+        json_encoders = {datetime: lambda v: v.isoformat()}

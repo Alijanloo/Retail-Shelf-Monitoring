@@ -1,4 +1,5 @@
 from dependency_injector import containers, providers
+
 from .frameworks.config import AppConfig
 from .frameworks.database import DatabaseManager
 from .frameworks.logging_config import get_logger
@@ -13,14 +14,10 @@ class ApplicationContainer(containers.DeclarativeContainer):
 
     config = providers.Singleton(AppConfig.from_yaml_or_default)
 
-    logger = providers.Singleton(
-        get_logger,
-        name="retail_shelf_monitoring"
-    )
+    logger = providers.Singleton(get_logger, name="retail_shelf_monitoring")
 
     database_manager = providers.Singleton(
-        DatabaseManager,
-        database_url=config.provided.database.url
+        DatabaseManager, database_url=config.provided.database.url
     )
 
 

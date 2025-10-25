@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
 from datetime import datetime
-from ...entities.shelf import Shelf
-from ...entities.planogram import Planogram
-from ...entities.detection import Detection
+from typing import List, Optional
+
 from ...entities.alert import Alert
+from ...entities.detection import Detection
+from ...entities.planogram import Planogram
+from ...entities.shelf import Shelf
 
 
 class ShelfRepository(ABC):
@@ -66,21 +67,17 @@ class DetectionRepository(ABC):
 
     @abstractmethod
     async def get_by_shelf(
-        self, 
+        self,
         shelf_id: str,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Detection]:
         pass
 
     @abstractmethod
     async def get_recent_by_cell(
-        self,
-        shelf_id: str,
-        row_idx: int,
-        item_idx: int,
-        limit: int = 10
+        self, shelf_id: str, row_idx: int, item_idx: int, limit: int = 10
     ) -> List[Detection]:
         pass
 
@@ -95,18 +92,12 @@ class AlertRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_active_alerts(
-        self, 
-        shelf_id: Optional[str] = None
-    ) -> List[Alert]:
+    async def get_active_alerts(self, shelf_id: Optional[str] = None) -> List[Alert]:
         pass
 
     @abstractmethod
     async def get_by_cell(
-        self,
-        shelf_id: str,
-        row_idx: int,
-        item_idx: int
+        self, shelf_id: str, row_idx: int, item_idx: int
     ) -> Optional[Alert]:
         pass
 
@@ -115,11 +106,7 @@ class AlertRepository(ABC):
         pass
 
     @abstractmethod
-    async def confirm_alert(
-        self,
-        alert_id: str,
-        confirmed_by: str
-    ) -> Alert:
+    async def confirm_alert(self, alert_id: str, confirmed_by: str) -> Alert:
         pass
 
     @abstractmethod

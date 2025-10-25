@@ -1,8 +1,8 @@
 import asyncio
 import sys
 
-from retail_shelf_monitoring.frameworks.logging_config import get_logger
 from retail_shelf_monitoring.container import ApplicationContainer
+from retail_shelf_monitoring.frameworks.logging_config import get_logger
 
 logger = get_logger(__name__)
 

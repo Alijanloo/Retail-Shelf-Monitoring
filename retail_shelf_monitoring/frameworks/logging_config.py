@@ -1,8 +1,9 @@
 import logging
 import logging.config
+import sys
 from pathlib import Path
 from typing import Optional
-import sys
+
 import yaml
 
 from retail_shelf_monitoring import DEFAULT_PATH
@@ -110,8 +111,14 @@ class LoggerFactory:
 
         formats = {
             "simple": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            "detailed": "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(funcName)s() - %(message)s",
-            "json": "%(asctime)s | %(name)s | %(levelname)s | %(filename)s:%(lineno)d | %(funcName)s | %(message)s",
+            "detailed": (
+                "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - "
+                "%(funcName)s() - %(message)s"
+            ),
+            "json": (
+                "%(asctime)s | %(name)s | %(levelname)s | %(filename)s:%(lineno)d | "
+                "%(funcName)s | %(message)s"
+            ),
         }
 
         log_format = formats.get(format_type, formats["detailed"])

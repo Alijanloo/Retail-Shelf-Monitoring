@@ -57,17 +57,17 @@ from retail_shelf_monitoring.containers import ApplicationContainer
 
 def test_document_indexing():
     container = ApplicationContainer()
-    
+
     # Mock the repository
     mock_repository = mock.AsyncMock()
     mock_repository.index_document.return_value = IndexDocumentResponse(
         document_id="test", success=True, message="Success"
     )
-    
+
     # Override dependency
     with container.document_repository.override(mock_repository):
         container.wire(modules=[__name__])
-        
+
         # Test your code - mock will be injected automatically
         indexing_use_case = container.document_indexing_use_case()
         # ... test logic

@@ -1,14 +1,13 @@
-import pytest
 from datetime import datetime
+
+import pytest
+
 from retail_shelf_monitoring.entities.sku import SKU
 
 
 class TestSKU:
     def test_sku_creation(self):
-        sku = SKU(
-            sku_id="SKU-12345",
-            name="Coca Cola 330ml"
-        )
+        sku = SKU(sku_id="SKU-12345", name="Coca Cola 330ml")
         assert sku.sku_id == "SKU-12345"
         assert sku.name == "Coca Cola 330ml"
         assert sku.category is None
@@ -19,7 +18,7 @@ class TestSKU:
             sku_id="SKU-12345",
             name="Coca Cola 330ml",
             category="Beverages",
-            barcode="0123456789012"
+            barcode="0123456789012",
         )
         assert sku.category == "Beverages"
         assert sku.barcode == "0123456789012"

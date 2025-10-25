@@ -1,8 +1,8 @@
 from .repositories import (
-    ShelfRepository,
-    PlanogramRepository,
-    DetectionRepository,
     AlertRepository,
+    DetectionRepository,
+    PlanogramRepository,
+    ShelfRepository,
 )
 from .services import CacheService
 

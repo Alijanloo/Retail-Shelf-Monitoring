@@ -24,10 +24,10 @@ while True:
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # 4. Display the resulting frame
-    cv2.imshow('Live Camera Stream', gray_frame)
+    cv2.imshow("Live Camera Stream", gray_frame)
 
     # 5. Break the loop on 'q' key press
-    if cv2.waitKey(1) == ord('q'):
+    if cv2.waitKey(1) == ord("q"):
         break
 
 # 6. When everything is done, release the capture and close all windows

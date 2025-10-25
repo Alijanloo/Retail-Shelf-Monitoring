@@ -56,12 +56,12 @@ The pipeline focuses on reliability for a moving camera: detection → alignment
      * Sort rows by average Y-coordinate (top to bottom)
      * Within each row, sort SKUs by X-coordinate (left to right) to assign item indices
      * Generate cell structure: `{row_idx, item_idx, bbox, sku_id}`
-   
+
    * **During Indexing** (reference creation):
      * Run grid detection on reference image detections
      * Store grid structure with expected SKU per cell position
      * Persist to database as the planogram for shelf `S`
-   
+
    * **During Inference** (real-time analysis):
      * Run same grid detection on current frame detections
      * Match current grid cells to reference grid cells by position (row_idx, item_idx)
@@ -319,7 +319,7 @@ Example Docker Compose services:
 
 1. Tooling & infra: Redis + PostgreSQL + Docker Compose skeleton.
 2. **Grid detection module**: implement DBSCAN-based clustering algorithm for row detection and item ordering (shared across indexing and inference).
-3. **Reference ingestion pipeline**: 
+3. **Reference ingestion pipeline**:
    - UI or script to upload reference shelf image
    - Auto-detect SKUs and generate planogram grid structure
    - Store in database with clustering parameters

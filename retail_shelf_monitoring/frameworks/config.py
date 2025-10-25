@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, validator
-from typing import Optional
-import yaml
 from pathlib import Path
+from typing import Optional
+
+import yaml
+from pydantic import BaseModel, Field
 
 
 class DatabaseConfig(BaseModel):
@@ -13,7 +14,10 @@ class DatabaseConfig(BaseModel):
 
     @property
     def url(self) -> str:
-        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        return (
+            f"postgresql://{self.user}:{self.password}@"
+            f"{self.host}:{self.port}/{self.database}"
+        )
 
 
 class RedisConfig(BaseModel):
@@ -47,10 +51,10 @@ class AppConfig(BaseModel):
         path = Path(config_path)
         if not path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        
-        with open(path, 'r') as f:
+
+        with open(path, "r") as f:
             config_dict = yaml.safe_load(f) or {}
-        
+
         return cls(**config_dict)
 
     @classmethod

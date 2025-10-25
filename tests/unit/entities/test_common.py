@@ -1,6 +1,11 @@
 import pytest
-from datetime import datetime
-from retail_shelf_monitoring.entities.common import BoundingBox, AlertType, CellState, Priority
+
+from retail_shelf_monitoring.entities.common import (
+    AlertType,
+    BoundingBox,
+    CellState,
+    Priority,
+)
 
 
 class TestBoundingBox:
@@ -29,7 +34,7 @@ class TestBoundingBox:
     def test_bounding_box_validation(self):
         with pytest.raises(Exception):
             BoundingBox(x1=-10.0, y1=0.0, x2=100.0, y2=100.0)
-        
+
         with pytest.raises(Exception):
             BoundingBox(x1=0.0, y1=0.0, x2=0.0, y2=100.0)
 
