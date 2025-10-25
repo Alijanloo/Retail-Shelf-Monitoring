@@ -66,19 +66,22 @@ class YOLOv11Detector:
     ) -> List[Dict]:
         orig_width, orig_height = orig_size
 
+        # YOLOv11 outputs shape [1, 84, 8400] or [1, num_classes+4, num_boxes]
+        # Need to transpose to [num_boxes, num_classes+4]
         predictions = outputs[0]
+
+        # If predictions shape is [84, 8400], transpose to [8400, 84]
+        if predictions.shape[0] < predictions.shape[1]:
+            predictions = predictions.T
 
         detections = []
 
         for pred in predictions:
             x_center, y_center, width, height = pred[:4]
-            obj_conf = pred[4]
-            class_scores = pred[5:]
+            class_scores = pred[4:]
 
             class_id = np.argmax(class_scores)
-            class_conf = class_scores[class_id]
-
-            confidence = obj_conf * class_conf
+            confidence = class_scores[class_id]
 
             if confidence < self.conf_threshold:
                 continue
