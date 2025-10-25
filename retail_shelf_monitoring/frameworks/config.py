@@ -39,12 +39,27 @@ class LoggingConfig(BaseModel):
     file_path: Optional[str] = Field(default=None)
 
 
+class MLConfig(BaseModel):
+    model_path: str = Field(default="models/yolov11_retail.xml")
+    confidence_threshold: float = Field(default=0.35, ge=0, le=1)
+    nms_threshold: float = Field(default=0.45, ge=0, le=1)
+    device: str = Field(default="CPU")
+
+
+class GridConfig(BaseModel):
+    clustering_method: str = Field(default="dbscan")
+    eps: float = Field(default=15.0, gt=0)
+    min_samples: int = Field(default=2, ge=1)
+
+
 class AppConfig(BaseModel):
     app_name: str = Field(default="Retail Shelf Monitoring")
     debug: bool = Field(default=False)
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    ml: MLConfig = Field(default_factory=MLConfig)
+    grid: GridConfig = Field(default_factory=GridConfig)
 
     @classmethod
     def from_yaml(cls, config_path: str) -> "AppConfig":

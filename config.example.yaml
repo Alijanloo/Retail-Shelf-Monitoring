@@ -20,3 +20,16 @@ logging:
   level: INFO
   format: json
   file_path: null
+
+# Machine Learning Configuration
+ml:
+  model_path: "models/yolov11_retail.xml"  # Path to OpenVINO IR model
+  confidence_threshold: 0.35  # Detection confidence threshold (0-1)
+  nms_threshold: 0.45  # Non-maximum suppression threshold (0-1)
+  device: "CPU"  # OpenVINO device (CPU, GPU, MYRIAD, etc.)
+
+# Grid Detection Configuration
+grid:
+  clustering_method: "dbscan"  # Clustering method: "dbscan" or "kmeans"
+  eps: 15.0  # DBSCAN epsilon parameter (distance threshold)
+  min_samples: 2  # DBSCAN min_samples parameter
