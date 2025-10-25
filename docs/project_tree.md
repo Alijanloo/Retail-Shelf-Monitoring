@@ -15,8 +15,8 @@ retail_shelf_monitoring/
 │   ├── planogram.py       ✅ Planogram with grid
 │   ├── detection.py       ✅ Detection entity
 │   ├── alert.py           ✅ Alert entity
-│   ├── frame.py           ✅ Frame & AlignedFrame entities (Phase 3)
-│   └── stream.py          ✅ StreamConfig entity (Phase 3)
+│   ├── frame.py           ✅ Frame & AlignedFrame entities
+│   └── stream.py          ✅ StreamConfig entity
 ├── usecases/
 │   ├── __init__.py
 │   ├── interfaces/
@@ -25,26 +25,26 @@ retail_shelf_monitoring/
 │   │   └── services.py     ✅ Service ABCs
 │   ├── planogram_generation.py ✅ Planogram generation use case
 │   ├── shelf_management.py     ✅ Shelf management use case
-│   ├── stream_processing.py    ✅ Stream processing orchestration (Phase 3)
-│   ├── shelf_localization.py   ✅ Shelf localization use case (Phase 3)
-│   ├── detection_processing.py ✅ Detection processing orchestration (Phase 4)
-│   ├── cell_state_computation.py ✅ Cell state computation (Phase 4)
-│   ├── temporal_consensus.py   ✅ Temporal consensus manager (Phase 5)
-│   └── alert_generation.py     ✅ Alert generation & management (Phase 5)
+│   ├── stream_processing.py    ✅ Stream processing orchestration
+│   ├── shelf_localization.py   ✅ Shelf localization use case
+│   ├── detection_processing.py ✅ Detection processing orchestration
+│   ├── cell_state_computation.py ✅ Cell state computation
+│   ├── temporal_consensus.py   ✅ Temporal consensus manager
+│   └── alert_generation.py     ✅ Alert generation & management
 ├── adaptors/
 │   ├── __init__.py
 │   ├── repositories/
 │   │   ├── __init__.py
 │   │   ├── postgres_shelf_repository.py      ✅ Shelf repository impl
 │   │   ├── postgres_planogram_repository.py  ✅ Planogram repository impl
-│   │   ├── postgres_detection_repository.py  ✅ Detection repository impl (Phase 4)
-│   │   └── postgres_alert_repository.py      ✅ Alert repository impl (Phase 5)
+│   │   ├── postgres_detection_repository.py  ✅ Detection repository impl
+│   │   └── postgres_alert_repository.py      ✅ Alert repository impl
 │   ├── ml/
 │   │   ├── __init__.py
 │   │   ├── model_loader.py    ✅ OpenVINO model loader
 │   │   ├── yolo_detector.py   ✅ YOLOv11 detector
-│   │   └── sku_mapper.py      ✅ Class ID to SKU mapping (Phase 4)
-│   ├── tracking/              ✅ Phase 4: Object tracking
+│   │   └── sku_mapper.py      ✅ Class ID to SKU mapping
+│   ├── tracking/              ✅ Object tracking
 │   │   ├── __init__.py
 │   │   ├── tracker_interface.py ✅ Tracker ABC
 │   │   └── bytetrack.py         ✅ SimpleTracker implementation
@@ -52,21 +52,21 @@ retail_shelf_monitoring/
 │   │   ├── __init__.py
 │   │   ├── clustering.py      ✅ DBSCAN/K-means clustering
 │   │   └── grid_detector.py   ✅ Grid detection logic
-│   ├── video/                 ✅ Phase 3: Video stream processing
+│   ├── video/                 ✅ Video stream processing
 │   │   ├── __init__.py
 │   │   ├── stream_reader.py   ✅ RTSP/video stream reader
 │   │   ├── frame_extractor.py ✅ Frame extraction logic
 │   │   └── keyframe_selector.py ✅ Keyframe selection
-│   ├── vision/                ✅ Phase 3: Computer vision
+│   ├── vision/                ✅ Computer vision
 │   │   ├── __init__.py
 │   │   ├── feature_matcher.py ✅ ORB/SIFT feature matching
 │   │   ├── homography.py      ✅ Homography computation
 │   │   └── image_aligner.py   ✅ Image alignment/warping
-│   ├── preprocessing/         ✅ Phase 3: Image preprocessing
+│   ├── preprocessing/         ✅ Image preprocessing
 │       ├── __init__.py
 │       ├── stabilization.py   ✅ Motion stabilization
 │       └── image_processing.py ✅ General preprocessing
-│   └── messaging/             ✅ Phase 5: Redis Streams messaging
+│   └── messaging/             ✅ Redis Streams messaging
 │       ├── __init__.py
 │       ├── redis_stream.py    ✅ Redis Stream client
 │       └── alert_publisher.py ✅ Alert publishing
@@ -74,17 +74,31 @@ retail_shelf_monitoring/
 │   ├── __init__.py
 │   ├── logging_config.py   ✅ Logging framework
 │   ├── database.py         ✅ SQLAlchemy models
-│   ├── config.py           ✅ Config management (updated for Phase 3)
+│   ├── config.py           ✅ Config management
 │   ├── exceptions.py       ✅ Exception hierarchy
-│   └── streaming/          ✅ Phase 3: Streaming infrastructure
+│   ├── streaming/          ✅ Streaming infrastructure
+│   │   ├── __init__.py
+│   │   ├── frame_buffer.py    ✅ Thread-safe frame buffer
+│   │   └── stream_manager.py  ✅ Stream lifecycle management
+│   └── ui/                 ✅ Desktop UI (Phase 6)
 │       ├── __init__.py
-│       ├── frame_buffer.py    ✅ Thread-safe frame buffer
-│       └── stream_manager.py  ✅ Stream lifecycle management
-├── container.py            ✅ DI container (updated for Phase 3)
+│       ├── main_window.py      ✅ Main application window
+│       ├── threads/
+│       │   ├── __init__.py
+│       │   ├── capture_thread.py   ✅ Video capture worker
+│       │   ├── inference_thread.py ✅ ML inference worker
+│       │   └── alert_thread.py     ✅ Alert processing worker
+│       ├── widgets/
+│       │   ├── __init__.py
+│       │   ├── video_widget.py     ✅ Live video display
+│       │   └── alert_panel.py      ✅ Alert list and actions
+│       └── resources/
+│           └── styles.qss          ✅ Qt stylesheet
+├── container.py            ✅ DI container
 └── __main__.py             ✅ Entry point
 
 tests/
-├── unit/
+└── unit/
 │   ├── entities/
 │   │   ├── test_common.py      ✅ Common types tests
 │   │   ├── test_shelf.py       ✅ Shelf tests
@@ -93,13 +107,12 @@ tests/
 │   │   ├── test_detection.py   ✅ Detection tests
 │   │   └── test_alert.py       ✅ Alert tests
 │   ├── usecases/
-│   │   └── test_temporal_consensus.py ✅ Temporal consensus tests (Phase 5)
-│   └── adaptors/
-│       ├── __init__.py
-│       ├── test_clustering.py      ✅ Clustering algorithm tests
-│       ├── test_grid_detector.py   ✅ Grid detector tests
-│       └── phase3/                 ⏳ TODO: Phase 3 tests
-│           ├── test_feature_matcher.py
-│           ├── test_homography.py
-│           └── test_stream_processing.py
-└── integration/            ⏳ TODO: Phase 2-5 integration tests
+│   │   └── test_temporal_consensus.py ✅ Temporal consensus tests
+│   ├── adaptors/
+│   │   ├── __init__.py
+│   │   ├── test_clustering.py      ✅ Clustering algorithm tests
+│   │   ├── test_grid_detector.py   ✅ Grid detector tests
+│   │   ├── test_feature_matcher.py
+│   │   └── test_homography.py
+│   └── frameworks/
+│       └── test_streaming.py
