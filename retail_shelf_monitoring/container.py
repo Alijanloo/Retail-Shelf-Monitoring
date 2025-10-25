@@ -2,26 +2,29 @@ from dependency_injector import containers, providers
 
 from .adaptors.grid.grid_detector import GridDetector
 from .adaptors.ml.yolo_detector import YOLOv11Detector
+from .adaptors.preprocessing.image_processing import ImageProcessor
+from .adaptors.preprocessing.stabilization import MotionStabilizer
 from .adaptors.repositories.postgres_planogram_repository import (
     PostgresPlanogramRepository,
 )
 from .adaptors.repositories.postgres_shelf_repository import PostgresShelfRepository
+from .adaptors.video.frame_extractor import FrameExtractor
+from .adaptors.video.keyframe_selector import KeyframeSelector
+from .adaptors.vision.feature_matcher import FeatureMatcher
+from .adaptors.vision.homography import HomographyEstimator
+from .adaptors.vision.image_aligner import ShelfAligner
 from .frameworks.config import AppConfig
 from .frameworks.database import DatabaseManager
 from .frameworks.logging_config import get_logger
+from .frameworks.streaming.frame_buffer import FrameBuffer
+from .frameworks.streaming.stream_manager import StreamManager
 from .usecases.planogram_generation import PlanogramGenerationUseCase
+from .usecases.shelf_localization import ShelfLocalizationUseCase
 from .usecases.shelf_management import ShelfManagementUseCase
+from .usecases.stream_processing import StreamProcessingUseCase
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(
-        modules=[
-            "retail_shelf_monitoring.__main__",
-            "retail_shelf_monitoring.usecases.planogram_generation",
-            "retail_shelf_monitoring.usecases.shelf_management",
-        ]
-    )
-
     config = providers.Singleton(AppConfig.from_yaml_or_default)
 
     logger = providers.Singleton(get_logger, name="retail_shelf_monitoring")
@@ -55,6 +58,48 @@ class ApplicationContainer(containers.DeclarativeContainer):
         min_samples=config.provided.grid.min_samples,
     )
 
+    frame_buffer = providers.Singleton(
+        FrameBuffer, maxsize=config.provided.streaming.frame_buffer_size
+    )
+
+    stream_manager = providers.Singleton(StreamManager)
+
+    image_processor = providers.Factory(
+        ImageProcessor,
+        resize_width=config.provided.streaming.max_width,
+        resize_height=config.provided.streaming.max_height,
+        apply_clahe=False,
+    )
+
+    motion_stabilizer = providers.Factory(MotionStabilizer, smoothing_radius=30)
+
+    frame_extractor = providers.Factory(FrameExtractor, target_size=None)
+
+    keyframe_selector = providers.Factory(KeyframeSelector, diff_threshold=0.1)
+
+    feature_matcher = providers.Singleton(
+        FeatureMatcher,
+        feature_type=config.provided.feature_matching.feature_type,
+        max_features=config.provided.feature_matching.max_features,
+        match_threshold=config.provided.feature_matching.match_threshold,
+        min_matches=config.provided.feature_matching.min_matches,
+    )
+
+    homography_estimator = providers.Singleton(
+        HomographyEstimator,
+        ransac_reproj_threshold=config.provided.homography.ransac_reproj_threshold,
+        min_inlier_ratio=config.provided.homography.min_inlier_ratio,
+        min_inliers=config.provided.homography.min_inliers,
+        max_iterations=config.provided.homography.max_iterations,
+    )
+
+    shelf_aligner = providers.Singleton(
+        ShelfAligner,
+        feature_matcher=feature_matcher,
+        homography_estimator=homography_estimator,
+        min_alignment_confidence=config.provided.homography.min_alignment_confidence,
+    )
+
     shelf_management_usecase = providers.Factory(
         ShelfManagementUseCase,
         shelf_repository=shelf_repository,
@@ -66,6 +111,16 @@ class ApplicationContainer(containers.DeclarativeContainer):
         planogram_repository=planogram_repository,
         detector=yolo_detector,
         grid_detector=grid_detector,
+    )
+
+    stream_processing_usecase = providers.Factory(
+        StreamProcessingUseCase,
+        shelf_aligner=shelf_aligner,
+        output_dir=config.provided.alignment.output_dir,
+    )
+
+    shelf_localization_usecase = providers.Factory(
+        ShelfLocalizationUseCase, shelf_aligner=shelf_aligner
     )
 
 

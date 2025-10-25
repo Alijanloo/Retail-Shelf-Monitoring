@@ -52,6 +52,34 @@ class GridConfig(BaseModel):
     min_samples: int = Field(default=2, ge=1)
 
 
+class StreamingConfig(BaseModel):
+    max_queue_size: int = Field(default=100, ge=1)
+    frame_buffer_size: int = Field(default=100, ge=1)
+    process_every_n_frames: int = Field(default=30, ge=1)
+    max_width: int = Field(default=1920, gt=0)
+    max_height: int = Field(default=1080, gt=0)
+    enable_stabilization: bool = Field(default=False)
+
+
+class FeatureMatchingConfig(BaseModel):
+    feature_type: str = Field(default="orb")
+    max_features: int = Field(default=5000, gt=0)
+    match_threshold: float = Field(default=0.75, ge=0, le=1)
+    min_matches: int = Field(default=10, ge=1)
+
+
+class HomographyConfig(BaseModel):
+    ransac_reproj_threshold: float = Field(default=5.0, gt=0)
+    min_inlier_ratio: float = Field(default=0.3, ge=0, le=1)
+    min_inliers: int = Field(default=10, ge=1)
+    max_iterations: int = Field(default=2000, gt=0)
+    min_alignment_confidence: float = Field(default=0.3, ge=0, le=1)
+
+
+class AlignmentConfig(BaseModel):
+    output_dir: str = Field(default="data/aligned_frames")
+
+
 class AppConfig(BaseModel):
     app_name: str = Field(default="Retail Shelf Monitoring")
     debug: bool = Field(default=False)
@@ -60,6 +88,12 @@ class AppConfig(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     ml: MLConfig = Field(default_factory=MLConfig)
     grid: GridConfig = Field(default_factory=GridConfig)
+    streaming: StreamingConfig = Field(default_factory=StreamingConfig)
+    feature_matching: FeatureMatchingConfig = Field(
+        default_factory=FeatureMatchingConfig
+    )
+    homography: HomographyConfig = Field(default_factory=HomographyConfig)
+    alignment: AlignmentConfig = Field(default_factory=AlignmentConfig)
 
     @classmethod
     def from_yaml(cls, config_path: str) -> "AppConfig":
