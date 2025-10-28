@@ -6,7 +6,7 @@ from redis import Redis
 from .adaptors.grid.grid_detector import GridDetector
 from .adaptors.messaging.alert_publisher import AlertPublisher
 from .adaptors.messaging.redis_stream import RedisStreamClient
-from .adaptors.ml.sku_mapper import SKUMapper
+from .adaptors.ml.sku_detector import SKUDetector
 from .adaptors.ml.yolo_detector import YOLOv11Detector
 from .adaptors.preprocessing.image_processing import ImageProcessor
 from .adaptors.preprocessing.stabilization import MotionStabilizer
@@ -70,8 +70,12 @@ class ApplicationContainer(containers.DeclarativeContainer):
         max_age=config.provided.tracking.max_age,
     )
 
-    sku_mapper = providers.Singleton(
-        SKUMapper, mapping_file=config.provided.tracking.sku_mapping_file
+    sku_detector = providers.Singleton(
+        SKUDetector,
+        model_path=config.provided.sku_detection.model_path,
+        index_path=config.provided.sku_detection.index_path,
+        device=config.provided.sku_detection.device,
+        top_k=config.provided.sku_detection.top_k,
     )
 
     yolo_detector = providers.Singleton(
@@ -158,7 +162,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
         DetectionProcessingUseCase,
         detector=yolo_detector,
         tracker=tracker,
-        sku_mapper=sku_mapper,
+        sku_detector=sku_detector,
         detection_repository=detection_repository,
     )
 

@@ -46,6 +46,13 @@ class MLConfig(BaseModel):
     device: str = Field(default="CPU")
 
 
+class SKUDetectionConfig(BaseModel):
+    model_path: str = Field(default="data/mobilenet_sku.xml")
+    index_path: str = Field(default="data/sku_index.faiss")
+    device: str = Field(default="CPU")
+    top_k: int = Field(default=1, ge=1)
+
+
 class GridConfig(BaseModel):
     clustering_method: str = Field(default="dbscan")
     eps: float = Field(default=15.0, gt=0)
@@ -104,6 +111,7 @@ class AppConfig(BaseModel):
     redis: RedisConfig = Field(default_factory=RedisConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     ml: MLConfig = Field(default_factory=MLConfig)
+    sku_detection: SKUDetectionConfig = Field(default_factory=SKUDetectionConfig)
     grid: GridConfig = Field(default_factory=GridConfig)
     tracking: TrackingConfig = Field(default_factory=TrackingConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)

@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional
 
-from ..adaptors.ml.sku_mapper import SKUMapper
+from ..adaptors.ml.sku_detector import SKUDetector
 from ..adaptors.ml.yolo_detector import YOLOv11Detector
 from ..entities.common import BoundingBox
 from ..entities.detection import Detection
@@ -18,12 +18,12 @@ class DetectionProcessingUseCase:
         self,
         detector: YOLOv11Detector,
         tracker: Tracker,
-        sku_mapper: SKUMapper,
+        sku_detector: SKUDetector,
         detection_repository: DetectionRepository,
     ):
         self.detector = detector
         self.tracker = tracker
-        self.sku_mapper = sku_mapper
+        self.sku_detector = sku_detector
         self.detection_repository = detection_repository
 
     async def process_aligned_frame(
@@ -47,7 +47,20 @@ class DetectionProcessingUseCase:
 
         detection_entities = []
         for det in tracked_detections:
-            sku_id = self.sku_mapper.map_class_to_sku(det["class_id"])
+            x1, y1, x2, y2 = det["bbox"]
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+            x1 = max(0, x1)
+            y1 = max(0, y1)
+            x2 = min(aligned_image.shape[1], x2)
+            y2 = min(aligned_image.shape[0], y2)
+
+            if x2 > x1 and y2 > y1:
+                cropped_image = aligned_image[y1:y2, x1:x2]
+                sku_id = self.sku_detector.get_sku_id(cropped_image)
+            else:
+                logger.warning(f"Invalid bbox for detection: {det['bbox']}")
+                sku_id = "invalid_bbox"
 
             detection = Detection(
                 detection_id=str(uuid.uuid4()),

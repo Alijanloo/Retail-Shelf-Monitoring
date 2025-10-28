@@ -56,8 +56,21 @@ class InferenceThread(QThread):
                     detection_objects = []
                     for det in tracked_detections:
                         if det["confidence"] >= self.conf_threshold:
-                            mapper = self.detection_use_case.sku_mapper
-                            sku_id = mapper.map_class_to_sku(det["class_id"])
+                            x1, y1, x2, y2 = det["bbox"]
+                            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+                            x1 = max(0, x1)
+                            y1 = max(0, y1)
+                            x2 = min(frame.shape[1], x2)
+                            y2 = min(frame.shape[0], y2)
+
+                            if x2 > x1 and y2 > y1:
+                                cropped_image = frame[y1:y2, x1:x2]
+                                sku_detector = self.detection_use_case.sku_detector
+                                sku_id = sku_detector.get_sku_id(cropped_image)
+                            else:
+                                logger.warning(f"Invalid bbox: {det['bbox']}")
+                                sku_id = "invalid_bbox"
 
                             detection = Detection(
                                 detection_id=str(uuid.uuid4()),

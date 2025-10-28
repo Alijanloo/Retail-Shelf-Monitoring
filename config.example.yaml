@@ -28,6 +28,13 @@ ml:
   nms_threshold: 0.45  # Non-maximum suppression threshold (0-1)
   device: "CPU"  # OpenVINO device (CPU, GPU, MYRIAD, etc.)
 
+# SKU Detection Configuration
+sku_detection:
+  model_path: "data/mobilenet_sku.xml"  # Path to MobileNet OpenVINO model for embeddings
+  index_path: "data/sku_index.faiss"  # Path to FAISS index file
+  device: "CPU"  # OpenVINO device
+  top_k: 1  # Number of top similar SKUs to consider
+
 # Grid Detection Configuration
 grid:
   clustering_method: "dbscan"  # Clustering method: "dbscan" or "kmeans"

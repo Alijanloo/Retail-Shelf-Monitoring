@@ -42,8 +42,8 @@ retail_shelf_monitoring/
 │   │   └── postgres_alert_repository.py      ✅ Alert repository impl
 │   ├── ml/
 │   │   ├── __init__.py
-│   │   ├── yolo_detector.py   ✅ YOLOv11 detector
-│   │   └── sku_mapper.py      ✅ Class ID to SKU mapping
+│   │   ├── yolo_detector.py   ✅ YOLOv11 detector (general classes)
+│   │   └── sku_detector.py    ✅ MobileNet + FAISS SKU identification
 │   ├── tracking/              ✅ Object tracking
 │   │   ├── __init__.py
 │   │   └── bytetrack.py         ✅ SimpleTracker implementation
@@ -62,9 +62,9 @@ retail_shelf_monitoring/
 │   │   ├── homography.py      ✅ Homography computation
 │   │   └── image_aligner.py   ✅ Image alignment/warping
 │   ├── preprocessing/         ✅ Image preprocessing
-│       ├── __init__.py
-│       ├── stabilization.py   ✅ Motion stabilization
-│       └── image_processing.py ✅ General preprocessing
+│   │   ├── __init__.py
+│   │   ├── stabilization.py   ✅ Motion stabilization
+│   │   └── image_processing.py ✅ General preprocessing
 │   └── messaging/             ✅ Redis Streams messaging
 │       ├── __init__.py
 │       ├── redis_stream.py    ✅ Redis Stream client
@@ -98,20 +98,20 @@ retail_shelf_monitoring/
 
 tests/
 └── unit/
-│   ├── entities/
-│   │   ├── test_common.py      ✅ Common types tests
-│   │   ├── test_shelf.py       ✅ Shelf tests
-│   │   ├── test_sku.py         ✅ SKU tests
-│   │   ├── test_planogram.py   ✅ Planogram tests
-│   │   ├── test_detection.py   ✅ Detection tests
-│   │   └── test_alert.py       ✅ Alert tests
-│   ├── usecases/
-│   │   └── test_temporal_consensus.py ✅ Temporal consensus tests
-│   ├── adaptors/
-│   │   ├── __init__.py
-│   │   ├── test_clustering.py      ✅ Clustering algorithm tests
-│   │   ├── test_grid_detector.py   ✅ Grid detector tests
-│   │   ├── test_feature_matcher.py
-│   │   └── test_homography.py
-│   └── frameworks/
-│       └── test_streaming.py
+    ├── entities/
+    │   ├── test_common.py      ✅ Common types tests
+    │   ├── test_shelf.py       ✅ Shelf tests
+    │   ├── test_sku.py         ✅ SKU tests
+    │   ├── test_planogram.py   ✅ Planogram tests
+    │   ├── test_detection.py   ✅ Detection tests
+    │   └── test_alert.py       ✅ Alert tests
+    ├── usecases/
+    │   └── test_temporal_consensus.py ✅ Temporal consensus tests
+    ├── adaptors/
+    │   ├── __init__.py
+    │   ├── test_clustering.py      ✅ Clustering algorithm tests
+    │   ├── test_grid_detector.py   ✅ Grid detector tests
+    │   ├── test_feature_matcher.py
+    │   └── test_homography.py
+    └── frameworks/
+        └── test_streaming.py
