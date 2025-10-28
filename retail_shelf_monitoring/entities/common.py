@@ -18,13 +18,6 @@ class CellState(str, Enum):
     UNKNOWN = "unknown"
 
 
-class Priority(str, Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
-
 class BoundingBox(BaseModel):
     x1: float = Field(..., ge=0, description="Top-left X coordinate")
     y1: float = Field(..., ge=0, description="Top-left Y coordinate")

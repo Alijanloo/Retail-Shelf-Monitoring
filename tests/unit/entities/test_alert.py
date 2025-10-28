@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from retail_shelf_monitoring.entities.alert import Alert
-from retail_shelf_monitoring.entities.common import AlertType, Priority
+from retail_shelf_monitoring.entities.common import AlertType
 
 
 class TestAlert:
@@ -40,19 +40,6 @@ class TestAlert:
         )
         assert alert.alert_type == AlertType.MISPLACEMENT
         assert alert.detected_sku == "SKU-456"
-
-    def test_alert_with_priority(self):
-        now = datetime.utcnow()
-        alert = Alert(
-            shelf_id="SHELF-001",
-            row_idx=0,
-            item_idx=0,
-            alert_type=AlertType.OOS,
-            priority=Priority.CRITICAL,
-            first_seen=now,
-            last_seen=now,
-        )
-        assert alert.priority == Priority.CRITICAL
 
     def test_alert_confirmation_validation(self):
         now = datetime.utcnow()

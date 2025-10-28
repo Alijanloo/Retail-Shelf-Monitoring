@@ -172,7 +172,6 @@ class YOLOv11Detector:
                     "bbox": [x1, y1, x2, y2],
                     "class_id": int(class_id),
                     "confidence": float(confidence),
-                    "sku_id": f"sku_{class_id}",
                 }
             )
 

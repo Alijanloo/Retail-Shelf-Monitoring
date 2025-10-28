@@ -5,7 +5,7 @@ from typing import List, Optional
 from ..entities.alert import Alert
 from ..frameworks.exceptions import EntityNotFoundError
 from ..frameworks.logging_config import get_logger
-from ..usecases.interfaces.repositories import AlertRepository, ShelfRepository
+from ..usecases.interfaces.repositories import AlertRepository, PlanogramRepository
 
 logger = get_logger(__name__)
 
@@ -14,11 +14,11 @@ class AlertGenerationUseCase:
     def __init__(
         self,
         alert_repository: AlertRepository,
-        shelf_repository: ShelfRepository,
+        planogram_repository: PlanogramRepository,
         alert_publisher=None,
     ):
         self.alert_repository = alert_repository
-        self.shelf_repository = shelf_repository
+        self.planogram_repository = planogram_repository
         self.alert_publisher = alert_publisher
 
     async def generate_alert(
@@ -46,9 +46,9 @@ class AlertGenerationUseCase:
             logger.info(f"Updated existing alert: {updated_alert.alert_id}")
             return updated_alert
 
-        shelf = await self.shelf_repository.get_by_id(shelf_id)
-        if not shelf:
-            raise EntityNotFoundError("Shelf", shelf_id)
+        planogram = await self.planogram_repository.get_by_shelf_id(shelf_id)
+        if not planogram:
+            raise EntityNotFoundError("Planogram", shelf_id)
 
         alert = Alert(
             alert_id=str(uuid.uuid4()),
@@ -58,7 +58,6 @@ class AlertGenerationUseCase:
             alert_type=alert_data["alert_type"],
             expected_sku=alert_data["expected_sku"],
             detected_sku=alert_data.get("detected_sku"),
-            priority=shelf.priority,
             first_seen=datetime.utcnow(),
             last_seen=datetime.utcnow(),
             evidence_paths=evidence_paths or [],

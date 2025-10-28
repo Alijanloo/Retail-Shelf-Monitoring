@@ -7,7 +7,6 @@ from ..entities.common import BoundingBox
 from ..entities.detection import Detection
 from ..entities.frame import Frame
 from ..frameworks.logging_config import get_logger
-from .interfaces.repositories import DetectionRepository
 from .interfaces.tracker_interface import Tracker
 
 logger = get_logger(__name__)
@@ -19,12 +18,10 @@ class DetectionProcessingUseCase:
         detector: YOLOv11Detector,
         tracker: Tracker,
         sku_detector: SKUDetector,
-        detection_repository: DetectionRepository,
     ):
         self.detector = detector
         self.tracker = tracker
         self.sku_detector = sku_detector
-        self.detection_repository = detection_repository
 
     async def process_aligned_frame(
         self,
@@ -81,21 +78,9 @@ class DetectionProcessingUseCase:
 
             detection_entities.append(detection)
 
-        saved_detections = await self.detection_repository.create_batch(
-            detection_entities
-        )
-
         logger.info(
             f"Processed frame {frame_metadata.frame_id}: "
-            f"{len(saved_detections)} detections saved"
+            f"{len(detection_entities)} detections created"
         )
 
-        return saved_detections
-
-    async def get_recent_detections_for_cell(
-        self, shelf_id: str, row_idx: int, item_idx: int, limit: int = 10
-    ) -> List[Detection]:
-        """Retrieve recent detections for a specific planogram cell"""
-        return await self.detection_repository.get_recent_by_cell(
-            shelf_id=shelf_id, row_idx=row_idx, item_idx=item_idx, limit=limit
-        )
+        return detection_entities

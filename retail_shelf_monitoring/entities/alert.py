@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
 
-from .common import AlertType, Priority
+from .common import AlertType
 
 
 class Alert(BaseModel):
@@ -18,7 +18,6 @@ class Alert(BaseModel):
     detected_sku: Optional[str] = Field(
         None, description="Actually detected SKU (for misplacement)"
     )
-    priority: Priority = Field(default=Priority.MEDIUM, description="Alert priority")
     first_seen: datetime = Field(
         ..., description="First timestamp alert condition detected"
     )

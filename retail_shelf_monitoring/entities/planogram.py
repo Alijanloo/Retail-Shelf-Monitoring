@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
-from .common import BoundingBox, Priority
+from .common import BoundingBox
 
 
 class PlanogramItem(BaseModel):
@@ -96,10 +96,6 @@ class Planogram(BaseModel):
     )
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    @property
-    def priority(self) -> Priority:
-        return Priority(self.meta.get("priority", "medium"))
 
     class Config:
         frozen = False

@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from retail_shelf_monitoring.entities.alert import Alert
-from retail_shelf_monitoring.entities.common import AlertType, Priority
+from retail_shelf_monitoring.entities.common import AlertType
 from retail_shelf_monitoring.frameworks.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -43,16 +43,8 @@ class AlertPanel(QWidget):
             self.type_filter.addItem(alert_type.value.title(), alert_type)
         self.type_filter.currentIndexChanged.connect(self._apply_filters)
 
-        self.priority_filter = QComboBox()
-        self.priority_filter.addItem("All Priorities", None)
-        for priority in Priority:
-            self.priority_filter.addItem(priority.value.title(), priority)
-        self.priority_filter.currentIndexChanged.connect(self._apply_filters)
-
         filter_layout.addWidget(QLabel("Type:"))
         filter_layout.addWidget(self.type_filter)
-        filter_layout.addWidget(QLabel("Priority:"))
-        filter_layout.addWidget(self.priority_filter)
 
         layout.addLayout(filter_layout)
 
@@ -115,11 +107,6 @@ class AlertPanel(QWidget):
             item.setText(text)
             item.setData(Qt.UserRole, alert.alert_id)
 
-            if alert.priority == Priority.CRITICAL:
-                item.setForeground(Qt.red)
-            elif alert.priority == Priority.HIGH:
-                item.setForeground(Qt.yellow)
-
             self.alert_list.addItem(item)
 
         self._update_stats()
@@ -139,14 +126,7 @@ class AlertPanel(QWidget):
 
     def _update_stats(self):
         total = len(self.alerts)
-        critical = sum(
-            1 for a in self.alerts.values() if a.priority == Priority.CRITICAL
-        )
-        high = sum(1 for a in self.alerts.values() if a.priority == Priority.HIGH)
-
-        self.stats_label.setText(
-            f"Total: {total} | Critical: {critical} | High: {high}"
-        )
+        self.stats_label.setText(f"Total: {total}")
 
     @Slot()
     def _apply_filters(self):

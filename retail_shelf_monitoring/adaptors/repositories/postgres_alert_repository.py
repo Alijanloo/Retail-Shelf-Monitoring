@@ -6,8 +6,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ...entities.alert import Alert
-from ...entities.common import AlertType, Priority
-from ...frameworks.database import AlertModel, AlertTypeEnum, PriorityEnum
+from ...entities.common import AlertType
+from ...frameworks.database import AlertModel, AlertTypeEnum
 from ...frameworks.exceptions import DatabaseError, EntityNotFoundError
 from ...frameworks.logging_config import get_logger
 from ...usecases.interfaces.repositories import AlertRepository
@@ -30,7 +30,6 @@ class PostgresAlertRepository(AlertRepository):
                 alert_type=AlertTypeEnum[alert.alert_type.name],
                 expected_sku=alert.expected_sku,
                 detected_sku=alert.detected_sku,
-                priority=PriorityEnum[alert.priority.name],
                 first_seen=alert.first_seen,
                 last_seen=alert.last_seen,
                 confirmed=alert.confirmed,
@@ -182,7 +181,6 @@ class PostgresAlertRepository(AlertRepository):
             alert_type=AlertType[db_alert.alert_type.name],
             expected_sku=db_alert.expected_sku,
             detected_sku=db_alert.detected_sku,
-            priority=Priority[db_alert.priority.name],
             first_seen=db_alert.first_seen,
             last_seen=db_alert.last_seen,
             confirmed=db_alert.confirmed,

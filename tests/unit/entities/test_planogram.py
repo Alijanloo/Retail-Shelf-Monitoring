@@ -1,6 +1,6 @@
 import pytest
 
-from retail_shelf_monitoring.entities.common import BoundingBox, Priority
+from retail_shelf_monitoring.entities.common import BoundingBox
 from retail_shelf_monitoring.entities.planogram import (
     ClusteringParams,
     Planogram,
@@ -104,20 +104,3 @@ class TestPlanogram:
         )
         assert planogram.shelf_id == "SHELF-001"
         assert planogram.grid.total_items == 1
-        assert planogram.priority == Priority.MEDIUM
-
-    def test_planogram_with_metadata(self):
-        bbox = BoundingBox(x1=10.0, y1=20.0, x2=50.0, y2=60.0)
-        item = PlanogramItem(item_idx=0, bbox=bbox, sku_id="SKU-1")
-        row = PlanogramRow(row_idx=0, avg_y=40.0, items=[item])
-        grid = PlanogramGrid(rows=[row])
-        params = ClusteringParams()
-
-        planogram = Planogram(
-            shelf_id="SHELF-001",
-            reference_image_path="/path/to/ref.jpg",
-            grid=grid,
-            clustering_params=params,
-            meta={"priority": "high"},
-        )
-        assert planogram.priority == Priority.HIGH

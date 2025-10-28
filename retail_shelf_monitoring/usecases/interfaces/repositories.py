@@ -1,33 +1,8 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
 from typing import List, Optional
 
 from ...entities.alert import Alert
-from ...entities.detection import Detection
 from ...entities.planogram import Planogram
-from ...entities.shelf import Shelf
-
-
-class ShelfRepository(ABC):
-    @abstractmethod
-    async def create(self, shelf: Shelf) -> Shelf:
-        pass
-
-    @abstractmethod
-    async def get_by_id(self, shelf_id: str) -> Optional[Shelf]:
-        pass
-
-    @abstractmethod
-    async def get_all(self, active_only: bool = True) -> List[Shelf]:
-        pass
-
-    @abstractmethod
-    async def update(self, shelf: Shelf) -> Shelf:
-        pass
-
-    @abstractmethod
-    async def delete(self, shelf_id: str) -> bool:
-        pass
 
 
 class PlanogramRepository(ABC):
@@ -49,36 +24,6 @@ class PlanogramRepository(ABC):
 
     @abstractmethod
     async def delete(self, shelf_id: str) -> bool:
-        pass
-
-
-class DetectionRepository(ABC):
-    @abstractmethod
-    async def create(self, detection: Detection) -> Detection:
-        pass
-
-    @abstractmethod
-    async def create_batch(self, detections: List[Detection]) -> List[Detection]:
-        pass
-
-    @abstractmethod
-    async def get_by_id(self, detection_id: str) -> Optional[Detection]:
-        pass
-
-    @abstractmethod
-    async def get_by_shelf(
-        self,
-        shelf_id: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        limit: int = 100,
-    ) -> List[Detection]:
-        pass
-
-    @abstractmethod
-    async def get_recent_by_cell(
-        self, shelf_id: str, row_idx: int, item_idx: int, limit: int = 10
-    ) -> List[Detection]:
         pass
 
 

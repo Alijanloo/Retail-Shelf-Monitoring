@@ -4,11 +4,12 @@ from typing import Optional
 import cv2
 
 from ..adaptors.grid.grid_detector import GridDetector
+from ..adaptors.ml.sku_detector import SKUDetector
 from ..adaptors.ml.yolo_detector import YOLOv11Detector
 from ..entities.planogram import Planogram
 from ..frameworks.exceptions import EntityNotFoundError, ValidationError
 from ..frameworks.logging_config import get_logger
-from .interfaces.repositories import PlanogramRepository, ShelfRepository
+from .interfaces.repositories import PlanogramRepository
 
 logger = get_logger(__name__)
 
@@ -16,14 +17,14 @@ logger = get_logger(__name__)
 class PlanogramGenerationUseCase:
     def __init__(
         self,
-        shelf_repository: ShelfRepository,
         planogram_repository: PlanogramRepository,
         detector: YOLOv11Detector,
+        sku_detector: SKUDetector,
         grid_detector: GridDetector,
     ):
-        self.shelf_repository = shelf_repository
         self.planogram_repository = planogram_repository
         self.detector = detector
+        self.sku_detector = sku_detector
         self.grid_detector = grid_detector
 
     async def generate_planogram_from_reference(
@@ -34,10 +35,6 @@ class PlanogramGenerationUseCase:
         eps: float = 15.0,
         min_samples: int = 2,
     ) -> Planogram:
-        shelf = await self.shelf_repository.get_by_id(shelf_id)
-        if not shelf:
-            raise EntityNotFoundError("Shelf", shelf_id)
-
         image_path = Path(reference_image_path)
         if not image_path.exists():
             raise FileNotFoundError(
@@ -51,6 +48,19 @@ class PlanogramGenerationUseCase:
 
         logger.info(f"Running SKU detection on reference image for shelf {shelf_id}")
         detections = self.detector.detect(image)
+
+        for det in detections:
+            x1, y1, x2, y2 = det["bbox"]
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+            x1 = max(0, x1)
+            y1 = max(0, y1)
+            x2 = min(image.shape[1], x2)
+            y2 = min(image.shape[0], y2)
+
+            if x2 > x1 and y2 > y1:
+                cropped_image = image[y1:y2, x1:x2]
+                det["sku_id"] = self.sku_detector.get_sku_id(cropped_image)
 
         if not detections:
             raise ValidationError(
@@ -72,9 +82,6 @@ class PlanogramGenerationUseCase:
             grid=grid,
             clustering_params=clustering_params,
             meta={
-                "store": shelf.store_id,
-                "aisle": shelf.aisle,
-                "section": shelf.section,
                 "total_items": grid.total_items,
                 "total_rows": len(grid.rows),
             },

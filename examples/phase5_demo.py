@@ -1,8 +1,7 @@
 import asyncio
 
 from retail_shelf_monitoring.container import ApplicationContainer
-from retail_shelf_monitoring.entities.common import CellState, Priority
-from retail_shelf_monitoring.entities.shelf import Shelf
+from retail_shelf_monitoring.entities.common import CellState
 from retail_shelf_monitoring.frameworks.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -18,21 +17,11 @@ async def phase5_demo():
     db_manager.drop_tables()
     db_manager.create_tables()
 
-    shelf_mgmt = container.shelf_management_usecase()
     temporal_consensus = container.temporal_consensus_manager()
     alert_generation = container.alert_generation_usecase()
     alert_management = container.alert_management_usecase()
 
     logger.info("Step 1: Creating test shelf")
-    shelf = Shelf(
-        shelf_id="shelf_001",
-        store_id="store_123",
-        aisle="A1",
-        section="Beverages",
-        priority=Priority.HIGH,
-    )
-    created_shelf = await shelf_mgmt.create_shelf(shelf)
-    logger.info(f"Created shelf: {created_shelf.shelf_id}")
 
     logger.info("\nStep 2: Simulating temporal consensus with cell state updates")
 
@@ -111,7 +100,6 @@ async def phase5_demo():
         logger.info(
             f"  Alert {alert.alert_id}: {alert.alert_type.value} at "
             f"({alert.row_idx}, {alert.item_idx}), "
-            f"Priority: {alert.priority.value}, "
             f"Consecutive frames: {alert.consecutive_frames}"
         )
 

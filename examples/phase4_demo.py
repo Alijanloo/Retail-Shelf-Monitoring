@@ -47,31 +47,11 @@ async def main():
     if not planograms:
         logger.warning("   No planograms found. Creating one from reference image...")
 
-        from retail_shelf_monitoring.entities.common import Priority
-        from retail_shelf_monitoring.entities.shelf import Shelf
-
-        # Create a shelf first using container
-        shelf_repo = container.shelf_repository()
-
         # Check if shelf exists
         test_shelf_id = "shelf_517"
-        test_shelf = await shelf_repo.get_by_id(test_shelf_id)
-
-        if not test_shelf:
-            logger.info("   Creating test shelf...")
-            test_shelf = Shelf(
-                shelf_id=test_shelf_id,
-                store_id="store_001",
-                aisle="A1",
-                section="beverages",
-                priority=Priority.MEDIUM,
-                active=True,
-            )
-            test_shelf = await shelf_repo.create(test_shelf)
-            logger.info(f"   Created shelf: {test_shelf_id}")
 
         # Generate planogram from reference image
-        reference_image_path = Path("data/reference_shelves/517.png")
+        reference_image_path = Path("data/reference_shelves/517_missplaced.png")
         if not reference_image_path.exists():
             logger.error(
                 "   Reference image not found! Please add a reference shelf image."

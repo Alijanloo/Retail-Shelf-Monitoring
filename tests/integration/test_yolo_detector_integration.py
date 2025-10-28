@@ -32,7 +32,7 @@ class TestYOLODetectorIntegration:
     def test_image_path(self):
         """Get path to a test image."""
         # Use the first available test image
-        test_image_path = Path("data/reference_shelves/517.png")
+        test_image_path = Path("data/reference_shelves/517_missplaced.png")
         if not test_image_path.exists():
             pytest.skip(f"Test image not found at {test_image_path}")
         return test_image_path
@@ -53,7 +53,7 @@ class TestYOLODetectorIntegration:
 
         result_image = self._draw_detections(test_image.copy(), detections)
 
-        output_path = Path("data/output.jpg")
+        output_path = "data/output.jpg"
         success = cv2.imwrite(str(output_path), result_image)
         assert success, "Failed to save visualization image"
 
@@ -72,7 +72,7 @@ class TestYOLODetectorIntegration:
                 bbox = detection["bbox"]
                 class_id = detection["class_id"]
                 confidence = detection["confidence"]
-                sku_id = detection["sku_id"]
+                sku_id = class_id
                 print(
                     f"  {i+1}. SKU: {sku_id}, Class: {class_id}, "
                     f"Conf: {confidence:.3f}, BBox: [{bbox[0]:.1f}, {bbox[1]:.1f}, "
@@ -156,7 +156,7 @@ class TestYOLODetectorIntegration:
             bbox = detection["bbox"]
             class_id = detection["class_id"]
             confidence = detection["confidence"]
-            sku_id = detection["sku_id"]
+            sku_id = class_id
 
             # Get coordinates
             x1, y1, x2, y2 = map(int, bbox)
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     )
 
     # Load test image
-    test_image_path = Path("data/reference_shelves/517.png")
+    test_image_path = Path("data/reference_shelves/517_missplaced.png")
     if not test_image_path.exists():
         print(f"Test image not found at {test_image_path}")
         exit(1)

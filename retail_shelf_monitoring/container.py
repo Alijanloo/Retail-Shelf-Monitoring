@@ -11,13 +11,9 @@ from .adaptors.ml.yolo_detector import YOLOv11Detector
 from .adaptors.preprocessing.image_processing import ImageProcessor
 from .adaptors.preprocessing.stabilization import MotionStabilizer
 from .adaptors.repositories.postgres_alert_repository import PostgresAlertRepository
-from .adaptors.repositories.postgres_detection_repository import (
-    PostgresDetectionRepository,
-)
 from .adaptors.repositories.postgres_planogram_repository import (
     PostgresPlanogramRepository,
 )
-from .adaptors.repositories.postgres_shelf_repository import PostgresShelfRepository
 from .adaptors.tracking.bytetrack import SimpleTracker
 from .adaptors.video.frame_extractor import FrameExtractor
 from .adaptors.video.keyframe_selector import KeyframeSelector
@@ -33,7 +29,6 @@ from .usecases.alert_generation import AlertGenerationUseCase, AlertManagementUs
 from .usecases.cell_state_computation import CellStateComputation
 from .usecases.detection_processing import DetectionProcessingUseCase
 from .usecases.planogram_generation import PlanogramGenerationUseCase
-from .usecases.shelf_management import ShelfManagementUseCase
 from .usecases.stream_processing import StreamProcessingUseCase
 from .usecases.temporal_consensus import TemporalConsensusManager
 
@@ -47,18 +42,8 @@ class ApplicationContainer(containers.DeclarativeContainer):
         DatabaseManager, database_url=config.provided.database.url
     )
 
-    shelf_repository = providers.Factory(
-        PostgresShelfRepository,
-        session_factory=database_manager.provided.get_session,
-    )
-
     planogram_repository = providers.Factory(
         PostgresPlanogramRepository,
-        session_factory=database_manager.provided.get_session,
-    )
-
-    detection_repository = providers.Factory(
-        PostgresDetectionRepository,
         session_factory=database_manager.provided.get_session,
     )
 
@@ -134,14 +119,8 @@ class ApplicationContainer(containers.DeclarativeContainer):
         min_alignment_confidence=config.provided.homography.min_alignment_confidence,
     )
 
-    shelf_management_usecase = providers.Factory(
-        ShelfManagementUseCase,
-        shelf_repository=shelf_repository,
-    )
-
     planogram_generation_usecase = providers.Factory(
         PlanogramGenerationUseCase,
-        shelf_repository=shelf_repository,
         planogram_repository=planogram_repository,
         detector=yolo_detector,
         sku_detector=sku_detector,
@@ -159,7 +138,6 @@ class ApplicationContainer(containers.DeclarativeContainer):
         detector=yolo_detector,
         tracker=tracker,
         sku_detector=sku_detector,
-        detection_repository=detection_repository,
     )
 
     cell_state_computation = providers.Factory(
@@ -209,7 +187,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
     alert_generation_usecase = providers.Factory(
         AlertGenerationUseCase,
         alert_repository=alert_repository,
-        shelf_repository=shelf_repository,
+        planogram_repository=planogram_repository,
         alert_publisher=alert_publisher,
     )
 

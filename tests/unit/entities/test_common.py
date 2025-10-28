@@ -1,11 +1,6 @@
 import pytest
 
-from retail_shelf_monitoring.entities.common import (
-    AlertType,
-    BoundingBox,
-    CellState,
-    Priority,
-)
+from retail_shelf_monitoring.entities.common import AlertType, BoundingBox, CellState
 
 
 class TestBoundingBox:
@@ -49,9 +44,3 @@ class TestEnums:
         assert CellState.OK == "ok"
         assert CellState.OOS == "out_of_stock"
         assert CellState.MISPLACED == "misplaced"
-
-    def test_priority_enum(self):
-        assert Priority.LOW == "low"
-        assert Priority.MEDIUM == "medium"
-        assert Priority.HIGH == "high"
-        assert Priority.CRITICAL == "critical"
