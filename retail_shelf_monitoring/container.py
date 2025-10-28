@@ -33,7 +33,6 @@ from .usecases.alert_generation import AlertGenerationUseCase, AlertManagementUs
 from .usecases.cell_state_computation import CellStateComputation
 from .usecases.detection_processing import DetectionProcessingUseCase
 from .usecases.planogram_generation import PlanogramGenerationUseCase
-from .usecases.shelf_localization import ShelfLocalizationUseCase
 from .usecases.shelf_management import ShelfManagementUseCase
 from .usecases.stream_processing import StreamProcessingUseCase
 from .usecases.temporal_consensus import TemporalConsensusManager
@@ -145,6 +144,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
         shelf_repository=shelf_repository,
         planogram_repository=planogram_repository,
         detector=yolo_detector,
+        sku_detector=sku_detector,
         grid_detector=grid_detector,
     )
 
@@ -152,10 +152,6 @@ class ApplicationContainer(containers.DeclarativeContainer):
         StreamProcessingUseCase,
         shelf_aligner=shelf_aligner,
         output_dir=config.provided.alignment.output_dir,
-    )
-
-    shelf_localization_usecase = providers.Factory(
-        ShelfLocalizationUseCase, shelf_aligner=shelf_aligner
     )
 
     detection_processing_usecase = providers.Factory(

@@ -27,7 +27,6 @@ retail_shelf_monitoring/
 │   ├── planogram_generation.py ✅ Planogram generation use case
 │   ├── shelf_management.py     ✅ Shelf management use case
 │   ├── stream_processing.py    ✅ Stream processing orchestration
-│   ├── shelf_localization.py   ✅ Shelf localization use case
 │   ├── detection_processing.py ✅ Detection processing orchestration
 │   ├── cell_state_computation.py ✅ Cell state computation
 │   ├── temporal_consensus.py   ✅ Temporal consensus manager
