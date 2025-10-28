@@ -3,7 +3,7 @@ from typing import Dict, List
 import numpy as np
 
 from ...frameworks.logging_config import get_logger
-from .tracker_interface import Tracker
+from ...usecases.interfaces.tracker_interface import Tracker
 
 logger = get_logger(__name__)
 

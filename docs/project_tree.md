@@ -22,6 +22,7 @@ retail_shelf_monitoring/
 │   ├── interfaces/
 │   │   ├── __init__.py
 │   │   ├── repositories.py ✅ Repository ABCs
+│   │   ├── tracker_interface.py ✅ Tracker ABC
 │   │   └── services.py     ✅ Service ABCs
 │   ├── planogram_generation.py ✅ Planogram generation use case
 │   ├── shelf_management.py     ✅ Shelf management use case
@@ -41,12 +42,10 @@ retail_shelf_monitoring/
 │   │   └── postgres_alert_repository.py      ✅ Alert repository impl
 │   ├── ml/
 │   │   ├── __init__.py
-│   │   ├── model_loader.py    ✅ OpenVINO model loader
 │   │   ├── yolo_detector.py   ✅ YOLOv11 detector
 │   │   └── sku_mapper.py      ✅ Class ID to SKU mapping
 │   ├── tracking/              ✅ Object tracking
 │   │   ├── __init__.py
-│   │   ├── tracker_interface.py ✅ Tracker ABC
 │   │   └── bytetrack.py         ✅ SimpleTracker implementation
 │   ├── grid/
 │   │   ├── __init__.py

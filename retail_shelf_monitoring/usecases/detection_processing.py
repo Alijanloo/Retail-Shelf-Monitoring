@@ -3,12 +3,12 @@ from typing import List, Optional
 
 from ..adaptors.ml.sku_mapper import SKUMapper
 from ..adaptors.ml.yolo_detector import YOLOv11Detector
-from ..adaptors.tracking.tracker_interface import Tracker
 from ..entities.common import BoundingBox
 from ..entities.detection import Detection
 from ..entities.frame import Frame
 from ..frameworks.logging_config import get_logger
 from .interfaces.repositories import DetectionRepository
+from .interfaces.tracker_interface import Tracker
 
 logger = get_logger(__name__)
 
