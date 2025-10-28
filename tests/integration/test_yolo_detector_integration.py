@@ -1,4 +1,3 @@
-import tempfile
 from pathlib import Path
 
 import cv2
@@ -48,23 +47,16 @@ class TestYOLODetectorIntegration:
 
     def test_detect_and_visualize(self, detector, test_image, test_image_path):
         """Test YOLO detection on real image and save visualization."""
-        # Run inference
         detections = detector.detect(test_image)
 
-        # Verify we got some output (even if no objects detected)
         assert isinstance(detections, list)
 
-        # Create visualization
         result_image = self._draw_detections(test_image.copy(), detections)
 
-        # Save result to temporary file
-        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_file:
-            output_path = Path(tmp_file.name)
-
+        output_path = Path("data/output.jpg")
         success = cv2.imwrite(str(output_path), result_image)
         assert success, "Failed to save visualization image"
 
-        # Verify output file exists and has reasonable size
         assert output_path.exists()
         assert output_path.stat().st_size > 1000  # At least 1KB
 
