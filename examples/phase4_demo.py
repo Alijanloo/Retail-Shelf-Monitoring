@@ -16,8 +16,6 @@ from pathlib import Path
 
 import cv2
 
-from retail_shelf_monitoring.adaptors.ml.sku_mapper import SKUMapper
-from retail_shelf_monitoring.adaptors.tracking.bytetrack import SimpleTracker
 from retail_shelf_monitoring.container import ApplicationContainer
 from retail_shelf_monitoring.entities.frame import Frame
 from retail_shelf_monitoring.frameworks.database import DatabaseManager
@@ -35,23 +33,12 @@ async def main():
     logger.info("=" * 80)
 
     container = ApplicationContainer()
-    container.wire(modules=[__name__])
 
     db_manager: DatabaseManager = container.database_manager()
     db_manager.create_tables()
 
-    logger.info("\n1. Loading SKU Mapper...")
-    sku_mapper_path = Path("data/sku_mapping.json")
-    if sku_mapper_path.exists():
-        sku_mapper = SKUMapper(mapping_file=str(sku_mapper_path))
-        logger.info(f"   Loaded {len(sku_mapper.class_to_sku)} SKU mappings")
-    else:
-        logger.warning("   No SKU mapping file found, using defaults")
-        sku_mapper = SKUMapper()
-
-    logger.info("\n2. Initializing Tracker...")
-    tracker = SimpleTracker(track_thresh=0.5, match_thresh=0.3, max_age=30)
-    logger.info("   Tracker initialized")
+    tracker = container.tracker()
+    sku_detector = container.sku_detector()
 
     logger.info("\n3. Loading or Creating Planogram for shelf...")
     planogram_repo = container.planogram_repository()
@@ -156,7 +143,7 @@ async def main():
     detection_processing = DetectionProcessingUseCase(
         detector=detector,
         tracker=tracker,
-        sku_mapper=sku_mapper,
+        sku_detector=sku_detector,
         detection_repository=detection_repo,
     )
 

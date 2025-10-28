@@ -19,59 +19,14 @@ import sys
 from pathlib import Path
 
 import cv2
-import numpy as np
 
-from retail_shelf_monitoring.adaptors.ml.sku_detector import SKUDetector
+from retail_shelf_monitoring.container import ApplicationContainer
 from retail_shelf_monitoring.frameworks.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-
-def create_sample_dataset(output_dir: Path):
-    """
-    Create a sample SKU reference dataset for testing.
-    In production, replace with real product images.
-    """
-    logger.info("Creating sample SKU reference dataset...")
-
-    for sku_class in range(5):
-        class_dir = output_dir / str(sku_class)
-        class_dir.mkdir(parents=True, exist_ok=True)
-
-        for img_idx in range(3):
-            color = (
-                int(np.random.randint(50, 200)),
-                int(np.random.randint(50, 200)),
-                int(np.random.randint(50, 200)),
-            )
-
-            img = np.ones((224, 224, 3), dtype=np.uint8)
-            img[:, :] = color
-
-            cv2.putText(
-                img,
-                f"SKU {sku_class}",
-                (50, 100),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (255, 255, 255),
-                2,
-            )
-            cv2.putText(
-                img,
-                f"Img {img_idx}",
-                (50, 150),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (255, 255, 255),
-                1,
-            )
-
-            img_path = class_dir / f"sample_{img_idx}.jpg"
-            cv2.imwrite(str(img_path), img)
-
-    logger.info(f"Created sample dataset in {output_dir}")
-    logger.info("Total: 5 SKU classes × 3 images = 15 reference images")
+container = ApplicationContainer()
+detector = container.sku_detector()
 
 
 def build_index_example():
@@ -80,29 +35,9 @@ def build_index_example():
     logger.info("SKU Detection Example: Building Index")
     logger.info("=" * 80)
 
-    data_dir = Path("data/sku_references_sample")
-    model_path = Path("data/mobilenet_sku.xml")
-    index_path = Path("data/sku_index_sample.faiss")
-
-    if not data_dir.exists():
-        logger.warning(f"Sample dataset not found. Creating at {data_dir}...")
-        create_sample_dataset(data_dir)
-
-    if not model_path.exists():
-        logger.error(
-            f"\nMobileNet model not found at {model_path}\n"
-            "Please export your MobileNet model to OpenVINO format:\n"
-            "  mo --input_model mobilenet_v2.onnx --output_dir data/ "
-            "--model_name mobilenet_sku\n"
-        )
-        return
-
     try:
-        detector = SKUDetector(
-            model_path=str(model_path),
-            index_path=None,
-            device="CPU",
-        )
+        data_dir = Path("data/training_set")
+        index_path = Path("data/sku_index.faiss")
 
         num_images, num_classes = detector.build_index(
             data_dir=str(data_dir),
@@ -127,13 +62,7 @@ def test_identification_example():
     logger.info("SKU Detection Example: Testing Identification")
     logger.info("=" * 80)
 
-    model_path = Path("data/mobilenet_sku.xml")
-    index_path = Path("data/sku_index_sample.faiss")
-
-    if not model_path.exists():
-        logger.error(f"Model not found: {model_path}")
-        logger.error("Run with --build flag first")
-        return
+    index_path = Path("data/sku_index.faiss")
 
     if not index_path.exists():
         logger.error(f"Index not found: {index_path}")
@@ -141,16 +70,9 @@ def test_identification_example():
         return
 
     try:
-        detector = SKUDetector(
-            model_path=str(model_path),
-            index_path=str(index_path),
-            device="CPU",
-            top_k=3,
-        )
-
         logger.info("\nTesting SKU identification on sample images...\n")
 
-        data_dir = Path("data/sku_references_sample")
+        data_dir = Path("data/test_set")
         test_images = list(data_dir.rglob("*.jpg"))[:5]
 
         for img_path in test_images:
@@ -181,11 +103,13 @@ def main():
     parser = argparse.ArgumentParser(description="SKU Detection Example")
     parser.add_argument(
         "--build",
+        # default=True,
         action="store_true",
         help="Build FAISS index from reference images",
     )
     parser.add_argument(
         "--test",
+        default=True,
         action="store_true",
         help="Test SKU identification",
     )

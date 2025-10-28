@@ -64,7 +64,6 @@ class TrackingConfig(BaseModel):
     track_thresh: float = Field(default=0.5, ge=0, le=1)
     match_thresh: float = Field(default=0.3, ge=0, le=1)
     max_age: int = Field(default=30, ge=1)
-    sku_mapping_file: Optional[str] = Field(default=None)
 
 
 class StreamingConfig(BaseModel):

@@ -83,7 +83,7 @@ class TestDetection:
                 confidence=-0.1,
             )
 
-    def test_detection_with_sku_mapping(self):
+    def test_detection_with_sku_id(self):
         bbox = BoundingBox(x1=10.0, y1=20.0, x2=100.0, y2=120.0)
         detection = Detection(
             shelf_id="SHELF-001",

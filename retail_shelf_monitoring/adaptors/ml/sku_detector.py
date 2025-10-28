@@ -46,15 +46,16 @@ class SKUDetector:
 
         logger.info(f"Loading MobileNet model from {model_path}")
         self.core = Core()
-        self.compiled_model = self.core.compile_model(str(self.model_path), self.device)
+        self.model = self.core.read_model(str(self.model_path))
+        self.compiled_model = self.core.compile_model(self.model, self.device)
         self.infer_request = self.compiled_model.create_infer_request()
 
         self.input_layer = self.compiled_model.input(0)
         self.output_layer = self.compiled_model.output(0)
 
-        self.input_shape = self.input_layer.shape
-        self.input_height = self.input_shape[2]
-        self.input_width = self.input_shape[3]
+        self.input_shape = self.input_layer.partial_shape
+        self.input_height = self.input_shape[2].get_length()
+        self.input_width = self.input_shape[3].get_length()
 
         logger.info(f"Model loaded successfully on {device}")
         logger.info(f"Input shape: {self.input_shape}")
