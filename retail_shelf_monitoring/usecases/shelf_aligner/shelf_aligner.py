@@ -81,9 +81,6 @@ class ShelfAligner:
                 logger.warning(f"Invalid homography for shelf {shelf_id}")
                 continue
 
-            if not homography_result:
-                continue
-
             confidence = homography_result.inlier_ratio
 
             if confidence > best_confidence:
@@ -101,7 +98,7 @@ class ShelfAligner:
                 f"No valid shelf alignment found "
                 f"(best confidence: {best_confidence:.2%})"
             )
-            return None
+            return frame
 
         ref_height, ref_width = best_match["ref_shape"][:2]
 

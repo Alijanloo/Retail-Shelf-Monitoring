@@ -109,7 +109,6 @@ class ApplicationContainer(containers.DeclarativeContainer):
     detection_processing_usecase = providers.Factory(
         DetectionProcessingUseCase,
         detector=yolo_detector,
-        tracker=tracker,
         sku_detector=sku_detector,
     )
 

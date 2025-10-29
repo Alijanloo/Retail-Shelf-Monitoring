@@ -90,7 +90,7 @@ class StreamProcessingUseCase:
                 reason="no_alignment",
             )
 
-        detections = await self.detection_processing.process_aligned_frame(frame)
+        detections = self.detection_processing.process_aligned_frame(frame)
 
         if self.tracker and detections:
             self.tracker.update(detections)

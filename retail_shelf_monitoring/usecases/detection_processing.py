@@ -7,7 +7,6 @@ from ..entities.common import BoundingBox
 from ..entities.detection import Detection
 from ..entities.frame import Frame
 from ..frameworks.logging_config import get_logger
-from .interfaces.tracker_interface import Tracker
 
 logger = get_logger(__name__)
 
@@ -16,11 +15,9 @@ class DetectionProcessingUseCase:
     def __init__(
         self,
         detector: YOLOv11Detector,
-        tracker: Tracker,
         sku_detector: SKUDetector,
     ):
         self.detector = detector
-        self.tracker = tracker
         self.sku_detector = sku_detector
 
     def process_aligned_frame(self, frame: Frame) -> List[Detection]:
@@ -28,16 +25,14 @@ class DetectionProcessingUseCase:
         Run detection on aligned frame, apply tracking, and persist results
         """
 
-        raw_detections = self.detector.detect(frame.frame_img)
+        detections = self.detector.detect(frame.frame_img)
 
-        if not raw_detections:
+        if not detections:
             logger.debug(f"No detections in frame {frame.frame_id}")
             return []
 
-        tracked_detections = self.tracker.update(raw_detections)
-
         detection_entities = []
-        for det in tracked_detections:
+        for det in detections:
             x1, y1, x2, y2 = det["bbox"]
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
