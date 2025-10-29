@@ -1,3 +1,3 @@
-from .bytetrack import SimpleTracker
+from .sort import SortTracker
 
-__all__ = ["SimpleTracker"]
+__all__ = ["SortTracker"]

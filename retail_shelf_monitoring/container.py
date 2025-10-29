@@ -13,7 +13,7 @@ from .adaptors.repositories.postgres_alert_repository import PostgresAlertReposi
 from .adaptors.repositories.postgres_planogram_repository import (
     PostgresPlanogramRepository,
 )
-from .adaptors.tracking.bytetrack import SimpleTracker
+from .adaptors.tracking.sort import SortTracker
 from .adaptors.video.frame_extractor import FrameExtractor
 from .adaptors.video.keyframe_selector import KeyframeSelector
 from .frameworks.config import AppConfig
@@ -47,10 +47,10 @@ class ApplicationContainer(containers.DeclarativeContainer):
     )
 
     tracker = providers.Singleton(
-        SimpleTracker,
-        track_thresh=config.provided.tracking.track_thresh,
-        match_thresh=config.provided.tracking.match_thresh,
+        SortTracker,
         max_age=config.provided.tracking.max_age,
+        min_hits=config.provided.tracking.min_hits,
+        iou_threshold=config.provided.tracking.iou_threshold,
     )
 
     sku_detector = providers.Singleton(
