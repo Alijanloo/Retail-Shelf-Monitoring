@@ -23,7 +23,7 @@ class DetectionProcessingUseCase:
         self.tracker = tracker
         self.sku_detector = sku_detector
 
-    async def process_aligned_frame(
+    def process_aligned_frame(
         self,
         aligned_image,
         frame_metadata: Frame,

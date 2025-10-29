@@ -24,7 +24,6 @@ class AlertPublisher:
             "alert_type": alert.alert_type.value,
             "expected_sku": alert.expected_sku or "",
             "detected_sku": alert.detected_sku or "",
-            "priority": alert.priority.value,
             "first_seen": alert.first_seen.isoformat(),
             "last_seen": alert.last_seen.isoformat(),
             "consecutive_frames": alert.consecutive_frames,

@@ -29,6 +29,7 @@ from .usecases.planogram_generation import PlanogramGenerationUseCase
 from .usecases.shelf_aligner.feature_matcher import FeatureMatcher
 from .usecases.shelf_aligner.homography import HomographyEstimator
 from .usecases.shelf_aligner.shelf_aligner import ShelfAligner
+from .usecases.stream_processing import StreamProcessingUseCase
 from .usecases.temporal_consensus import TemporalConsensusManager
 
 
@@ -113,6 +114,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
 
     shelf_aligner = providers.Singleton(
         ShelfAligner,
+        reference_dir=config.provided.alignment.reference_dir,
         feature_matcher=feature_matcher,
         homography_estimator=homography_estimator,
         min_alignment_confidence=config.provided.homography.min_alignment_confidence,
@@ -188,6 +190,17 @@ class ApplicationContainer(containers.DeclarativeContainer):
         AlertManagementUseCase,
         alert_repository=alert_repository,
         alert_publisher=alert_publisher,
+    )
+
+    stream_processing_usecase = providers.Factory(
+        StreamProcessingUseCase,
+        shelf_aligner=shelf_aligner,
+        detection_processing=detection_processing_usecase,
+        planogram_repository=planogram_repository,
+        tracker=tracker,
+        cell_state_computation=cell_state_computation,
+        temporal_consensus=temporal_consensus_manager,
+        alert_generation=alert_generation_usecase,
     )
 
 

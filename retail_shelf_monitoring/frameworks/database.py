@@ -64,7 +64,6 @@ class AlertModel(Base):
     __table_args__ = (
         Index("idx_alert_shelf_active", "shelf_id", "confirmed", "dismissed"),
         Index("idx_alert_cell", "shelf_id", "row_idx", "item_idx"),
-        Index("idx_alert_type_priority", "alert_type", "priority"),
     )
 
 

@@ -1,15 +1,17 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import List
+
+from retail_shelf_monitoring.entities.detection import Detection
 
 
 class Tracker(ABC):
     @abstractmethod
-    def update(self, detections: List[Dict]) -> List[Dict]:
+    def update(self, detections: List[Detection]) -> List[Detection]:
         """
         Update tracker with new detections
 
         Args:
-            detections: List of detection dicts with 'bbox' and 'confidence'
+            detections: List of Detection objects
 
         Returns:
             List of detections with added 'track_id' field
