@@ -176,6 +176,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
         detection_processing=detection_processing_usecase,
         planogram_repository=planogram_repository,
         tracker=tracker,
+        keyframe_selector=keyframe_selector,
         cell_state_computation=cell_state_computation,
         temporal_consensus=temporal_consensus_manager,
         alert_generation=alert_generation_usecase,

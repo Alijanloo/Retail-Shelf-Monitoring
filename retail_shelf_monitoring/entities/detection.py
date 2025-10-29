@@ -23,9 +23,6 @@ class Detection(BaseModel):
     item_idx: Optional[int] = Field(
         None, ge=0, description="Assigned planogram item index"
     )
-    aligned_frame_path: Optional[str] = Field(
-        None, description="Path to aligned frame image"
-    )
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     @validator("confidence")

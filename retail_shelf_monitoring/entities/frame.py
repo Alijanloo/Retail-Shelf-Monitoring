@@ -7,11 +7,8 @@ from pydantic import BaseModel, Field
 
 class Frame(BaseModel):
     frame_id: str = Field(..., description="Unique frame identifier")
-    stream_id: str = Field(..., description="Source stream identifier")
+    frame_img: np.ndarray = Field(..., description="Original frame image")
     timestamp: datetime = Field(..., description="Frame capture timestamp")
-    frame_number: int = Field(..., ge=0, description="Sequential frame number")
-    width: int = Field(..., gt=0, description="Frame width in pixels")
-    height: int = Field(..., gt=0, description="Frame height in pixels")
     is_keyframe: bool = Field(default=False, description="Whether this is a keyframe")
     shelf_id: Optional[str] = Field(None, description="Detected shelf ID if localized")
     homography_matrix: Optional[list] = Field(
@@ -30,6 +27,14 @@ class Frame(BaseModel):
             datetime: lambda v: v.isoformat(),
             np.ndarray: lambda v: v.tolist(),
         }
+
+    @property
+    def width(self) -> float:
+        return self.frame.shape[1] if self.frame is not None else 0
+
+    @property
+    def height(self) -> float:
+        return self.frame.shape[0] if self.frame is not None else 0
 
 
 class AlignedFrame(BaseModel):

@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 import cv2
-import numpy as np
 
 from ...entities.frame import Frame
 from ...frameworks.logging_config import get_logger
@@ -54,15 +53,14 @@ class ShelfAligner:
 
     def align_to_best_reference(
         self,
-        frame: np.ndarray,
-        frame_metadata: Frame,
-    ) -> Optional[Tuple[str, Frame, np.ndarray]]:
+        frame: Frame,
+    ) -> Optional[Frame]:
         best_match = None
         best_confidence = 0.0
 
         for shelf_id, ref_data in self.reference_features.items():
             match_result = self.feature_matcher.match_features(
-                query_image=frame,
+                query_image=frame.frame_img,
                 ref_image=ref_data["image"],
                 ref_keypoints=ref_data["keypoints"],
                 ref_descriptors=ref_data["descriptors"],
@@ -107,14 +105,14 @@ class ShelfAligner:
 
         ref_height, ref_width = best_match["ref_shape"][:2]
 
-        aligned_image = self.homography_estimator.warp_image(
-            frame, best_match["homography"], (ref_width, ref_height)
+        frame.frame_img = self.homography_estimator.warp_image(
+            frame.frame_img, best_match["homography"], (ref_width, ref_height)
         )
 
-        frame_metadata.shelf_id = best_match["shelf_id"]
-        frame_metadata.homography_matrix = best_match["homography"].flatten().tolist()
-        frame_metadata.alignment_confidence = best_match["confidence"]
-        frame_metadata.inlier_ratio = best_match["confidence"]
+        frame.shelf_id = best_match["shelf_id"]
+        frame.homography_matrix = best_match["homography"].flatten().tolist()
+        frame.alignment_confidence = best_match["confidence"]
+        frame.inlier_ratio = best_match["confidence"]
 
         logger.info(
             f"Aligned frame to shelf {best_match['shelf_id']} "
@@ -122,4 +120,4 @@ class ShelfAligner:
             f"inliers: {best_match['num_inliers']})"
         )
 
-        return best_match["shelf_id"], frame_metadata, aligned_image
+        return frame

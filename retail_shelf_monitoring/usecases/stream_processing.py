@@ -4,6 +4,7 @@ from typing import List, Optional
 
 import numpy as np
 
+from ..adaptors.keyframe_selector import KeyframeSelector
 from ..entities.alert import Alert
 from ..entities.detection import Detection
 from ..entities.frame import Frame
@@ -22,7 +23,7 @@ logger = get_logger(__name__)
 @dataclass
 class StreamProcessingResult:
     success: bool
-    shelf_id: Optional[str] = None
+    frame: Frame = None
     detections: List[Detection] = None
     alerts: List[Alert] = None
     cell_states: List[dict] = None
@@ -45,6 +46,7 @@ class StreamProcessingUseCase:
         detection_processing: DetectionProcessingUseCase,
         planogram_repository: PlanogramRepository,
         tracker: Tracker,
+        keyframe_selector: KeyframeSelector,
         cell_state_computation: CellStateComputation,
         temporal_consensus: TemporalConsensusManager,
         alert_generation: AlertGenerationUseCase,
@@ -56,56 +58,60 @@ class StreamProcessingUseCase:
         self.temporal_consensus = temporal_consensus
         self.alert_generation = alert_generation
         self.tracker = tracker
+        self.keyframe_selector = keyframe_selector
 
     async def process_frame(
         self,
-        frame: np.ndarray,
+        frame_img: np.ndarray,
         frame_id: str,
         timestamp: datetime,
     ) -> StreamProcessingResult:
-        frame_metadata = Frame(
+        frame = Frame(
             frame_id=frame_id,
+            frame_img=frame_img,
             timestamp=timestamp,
-            source_id="camera",
         )
 
-        alignment_result = self.shelf_aligner.align_to_best_reference(
-            frame, frame_metadata
-        )
+        frame = self.keyframe_selector.is_keyframe(frame)
+        if not frame.is_keyframe:
+            return StreamProcessingResult(
+                success=False,
+                frame=frame,
+                reason="not_keyframe",
+            )
 
-        if not alignment_result:
+        frame = self.shelf_aligner.align_to_best_reference(frame)
+
+        if not frame.shelf_id:
             logger.debug("No shelf alignment found for frame")
             return StreamProcessingResult(
                 success=False,
+                frame=frame,
                 reason="no_alignment",
             )
 
-        shelf_id, aligned_metadata, aligned_image = alignment_result
-
-        detections = await self.detection_processing.process_aligned_frame(
-            aligned_image=aligned_image,
-            frame_metadata=aligned_metadata,
-            shelf_id=shelf_id,
-        )
+        detections = await self.detection_processing.process_aligned_frame(frame)
 
         if self.tracker and detections:
             self.tracker.update(detections)
 
         if not detections:
-            logger.debug(f"No detections for shelf {shelf_id}")
+            logger.debug(f"No detections for shelf {frame.shelf_id}")
             return StreamProcessingResult(
                 success=True,
-                shelf_id=shelf_id,
+                frame=frame,
+                shelf_id=frame.shelf_id,
             )
 
-        planogram = await self.planogram_repository.get_by_shelf_id(shelf_id)
+        planogram = await self.planogram_repository.get_by_shelf_id(frame.shelf_id)
         if not planogram:
             logger.debug(
-                f"No planogram found for shelf {shelf_id}, returning detections only"
+                f"No planogram found for shelf {frame.shelf_id}, "
+                "returning detections only!"
             )
             return StreamProcessingResult(
                 success=True,
-                shelf_id=shelf_id,
+                frame=frame,
                 detections=detections,
                 reason="no_planogram",
             )
@@ -117,7 +123,7 @@ class StreamProcessingUseCase:
         )
 
         consensus_result = self.temporal_consensus.update_cell_states(
-            shelf_id=shelf_id,
+            shelf_id=frame.shelf_id,
             cell_state_updates=cell_state_result["cell_states"],
         )
 
@@ -146,7 +152,7 @@ class StreamProcessingUseCase:
 
         return StreamProcessingResult(
             success=True,
-            shelf_id=shelf_id,
+            frame=frame,
             detections=detections,
             alerts=generated_alerts,
             cell_states=cell_state_result["cell_states"],

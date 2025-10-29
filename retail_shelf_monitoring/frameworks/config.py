@@ -61,18 +61,9 @@ class GridConfig(BaseModel):
 
 
 class TrackingConfig(BaseModel):
-    track_thresh: float = Field(default=0.5, ge=0, le=1)
-    match_thresh: float = Field(default=0.3, ge=0, le=1)
     max_age: int = Field(default=30, ge=1)
-
-
-class StreamingConfig(BaseModel):
-    max_queue_size: int = Field(default=100, ge=1)
-    frame_buffer_size: int = Field(default=100, ge=1)
-    process_every_n_frames: int = Field(default=30, ge=1)
-    max_width: int = Field(default=1920, gt=0)
-    max_height: int = Field(default=1080, gt=0)
-    enable_stabilization: bool = Field(default=False)
+    min_hits: int = Field(default=3, ge=1)
+    iou_threshold: float = Field(default=0.3, ge=0, le=1)
 
 
 class FeatureMatchingConfig(BaseModel):
@@ -91,6 +82,7 @@ class HomographyConfig(BaseModel):
 
 
 class AlignmentConfig(BaseModel):
+    reference_dir: str = Field(default="data/reference_shelves")
     output_dir: str = Field(default="data/aligned_frames")
 
 
@@ -113,7 +105,6 @@ class AppConfig(BaseModel):
     sku_detection: SKUDetectionConfig = Field(default_factory=SKUDetectionConfig)
     grid: GridConfig = Field(default_factory=GridConfig)
     tracking: TrackingConfig = Field(default_factory=TrackingConfig)
-    streaming: StreamingConfig = Field(default_factory=StreamingConfig)
     feature_matching: FeatureMatchingConfig = Field(
         default_factory=FeatureMatchingConfig
     )
