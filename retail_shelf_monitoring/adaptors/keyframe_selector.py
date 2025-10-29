@@ -1,6 +1,6 @@
 import numpy as np
 
-from ...frameworks.logging_config import get_logger
+from ..frameworks.logging_config import get_logger
 
 logger = get_logger(__name__)
 

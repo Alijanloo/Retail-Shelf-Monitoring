@@ -3,24 +3,19 @@ from datetime import timedelta
 from dependency_injector import containers, providers
 from redis import Redis
 
+from .adaptors.keyframe_selector import KeyframeSelector
 from .adaptors.messaging.alert_publisher import AlertPublisher
 from .adaptors.messaging.redis_stream import RedisStreamClient
 from .adaptors.ml.sku_detector import SKUDetector
 from .adaptors.ml.yolo_detector import YOLOv11Detector
-from .adaptors.preprocessing.image_processing import ImageProcessor
-from .adaptors.preprocessing.stabilization import MotionStabilizer
 from .adaptors.repositories.postgres_alert_repository import PostgresAlertRepository
 from .adaptors.repositories.postgres_planogram_repository import (
     PostgresPlanogramRepository,
 )
 from .adaptors.tracking.sort import SortTracker
-from .adaptors.video.frame_extractor import FrameExtractor
-from .adaptors.video.keyframe_selector import KeyframeSelector
 from .frameworks.config import AppConfig
 from .frameworks.database import DatabaseManager
 from .frameworks.logging_config import get_logger
-from .frameworks.streaming.frame_buffer import FrameBuffer
-from .frameworks.streaming.stream_manager import StreamManager
 from .usecases.alert_generation import AlertGenerationUseCase, AlertManagementUseCase
 from .usecases.cell_state_computation import CellStateComputation
 from .usecases.detection_processing import DetectionProcessingUseCase
@@ -76,23 +71,6 @@ class ApplicationContainer(containers.DeclarativeContainer):
         eps=config.provided.grid.eps,
         min_samples=config.provided.grid.min_samples,
     )
-
-    frame_buffer = providers.Singleton(
-        FrameBuffer, maxsize=config.provided.streaming.frame_buffer_size
-    )
-
-    stream_manager = providers.Singleton(StreamManager)
-
-    image_processor = providers.Factory(
-        ImageProcessor,
-        resize_width=config.provided.streaming.max_width,
-        resize_height=config.provided.streaming.max_height,
-        apply_clahe=False,
-    )
-
-    motion_stabilizer = providers.Factory(MotionStabilizer, smoothing_radius=30)
-
-    frame_extractor = providers.Factory(FrameExtractor, target_size=None)
 
     keyframe_selector = providers.Factory(KeyframeSelector, diff_threshold=0.1)
 
