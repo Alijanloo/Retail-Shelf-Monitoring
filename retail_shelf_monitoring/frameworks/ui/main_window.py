@@ -45,7 +45,6 @@ class MainWindow(QMainWindow):
 
         self.frame_queue = queue.Queue(maxsize=4)
 
-        self.current_shelf_id = None
         self.current_source = 0
 
         self._init_ui()
@@ -98,13 +97,13 @@ class MainWindow(QMainWindow):
         layout = QFormLayout()
 
         self.shelf_combo = QComboBox()
-        self.shelf_combo.addItem("Shelf 1 (Camera 0)", ("shelf_01", 0))
-        self.shelf_combo.addItem("Shelf 2 (Camera 1)", ("shelf_02", 1))
+        self.shelf_combo.addItem("Camera 0", 0)
+        self.shelf_combo.addItem("Camera 1", 1)
         video_path = (
             "data/vecteezy_kyiv-ukraine-dec-22-2024-shelves"
             "-filled-with-an_54312307.mov"
         )
-        self.shelf_combo.addItem("Test Video", ("test_shelf", video_path))
+        self.shelf_combo.addItem("Test Video", video_path)
         layout.addRow("Source:", self.shelf_combo)
 
         self.fps_spin = QSpinBox()
@@ -154,16 +153,14 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def _on_start(self):
-        shelf_data = self.shelf_combo.currentData()
-        self.current_shelf_id, self.current_source = shelf_data
+        self.current_source = self.shelf_combo.currentData()
 
-        logger.info(f"Starting monitoring for {self.current_shelf_id}")
+        logger.info(f"Starting monitoring for {self.current_source}")
 
         fps_limit = self.fps_spin.value()
         self.capture_thread = CaptureThread(
             source=self.current_source,
             fps_limit=fps_limit,
-            shelf_id=self.current_shelf_id,
         )
         self.capture_thread.frame_signal.connect(self.video_widget.update_frame)
         self.capture_thread.frame_signal.connect(self._on_frame_captured)
@@ -190,7 +187,7 @@ class MainWindow(QMainWindow):
         self.start_btn.setEnabled(False)
         self.stop_btn.setEnabled(True)
         self.shelf_combo.setEnabled(False)
-        self.status_bar.showMessage(f"Monitoring {self.current_shelf_id}...")
+        self.status_bar.showMessage(f"Monitoring {self.current_source}...")
 
     @Slot()
     def _on_stop(self):

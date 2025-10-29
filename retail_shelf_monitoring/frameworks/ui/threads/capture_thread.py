@@ -16,11 +16,10 @@ class CaptureThread(QThread):
     stopped_signal = Signal()
     fps_signal = Signal(float)
 
-    def __init__(self, source=0, fps_limit=None, shelf_id=None):
+    def __init__(self, source=0, fps_limit=None):
         super().__init__()
         self.source = source
         self.fps_limit = fps_limit
-        self.shelf_id = shelf_id or "unknown"
         self._stop_event = threading.Event()
         self._pause_event = threading.Event()
         self._frame_count = 0
@@ -36,7 +35,7 @@ class CaptureThread(QThread):
             self.stopped_signal.emit()
             return
 
-        logger.info(f"Started capture from {self.source} (shelf: {self.shelf_id})")
+        logger.info(f"Started capture from {self.source}")
         self._start_time = time.time()
         last_frame_time = 0
 

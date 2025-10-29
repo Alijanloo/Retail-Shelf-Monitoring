@@ -45,7 +45,7 @@ class InferenceThread(QThread):
 
                 result = asyncio.run(
                     self.stream_processing_use_case.process_frame(
-                        frame=frame,
+                        frame_img=frame,
                         frame_id=frame_id,
                         timestamp=datetime.utcnow(),
                     )
