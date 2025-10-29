@@ -159,14 +159,16 @@ class SortTracker(Tracker):
 
         # === prepare detections array ===
         dets = (
-            np.array([d.bbox for d in detections]) if detections else np.empty((0, 4))
+            np.array([[d.bbox.x1, d.bbox.y1, d.bbox.x2, d.bbox.y2] for d in detections])
+            if detections
+            else np.empty((0, 4))
         )
 
         # === if no trackers, create trackers for all detections ===
         if len(self.trackers) == 0:
             for det in detections:
-                self.trackers.append(KalmanBoxTracker(det.bbox))
-            # assign ids
+                bbox_arr = [det.bbox.x1, det.bbox.y1, det.bbox.x2, det.bbox.y2]
+                self.trackers.append(KalmanBoxTracker(bbox_arr))
             for det, trk in zip(detections, self.trackers):
                 det.track_id = trk.id
             return detections
@@ -215,7 +217,13 @@ class SortTracker(Tracker):
 
         # === create new trackers for unmatched detections ===
         for idx in unmatched_dets_idx:
-            trk = KalmanBoxTracker(dets[idx])
+            bbox_arr = [
+                detections[idx].bbox.x1,
+                detections[idx].bbox.y1,
+                detections[idx].bbox.x2,
+                detections[idx].bbox.y2,
+            ]
+            trk = KalmanBoxTracker(bbox_arr)
             self.trackers.append(trk)
             detections[idx].track_id = trk.id
 
