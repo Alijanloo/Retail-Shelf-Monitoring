@@ -11,7 +11,7 @@ The pipeline focuses on reliability for a moving camera: detection → alignment
    * If an expected cell has no detection (above confidence) for N consecutive frames → **Out-of-Stock (OOS)**.
    * If a detected SKU appears in a different planogram cell than expected (SKU id mismatch) → **Misplacement**.
 6. **Temporal filtering & alerts**: use tracking and temporal consensus to avoid false positives. Enqueue alerts to Redis and persist events to PostgreSQL.
-7. **Dashboard & APIs**: view results, confirm/cancel alerts (feedback loop).
+7. **Dashboard**: view results, confirm/cancel alerts (feedback loop).
 
 ---
 
@@ -25,7 +25,7 @@ The pipeline focuses on reliability for a moving camera: detection → alignment
   3. Ordering SKUs within each row by X-coordinate to determine item indices
   4. Storing the resulting grid structure with expected SKU per cell (rows may have different numbers of items)
 * **Real-time constraints**: lightweight → prioritize `yolov11-nano/small` variants; use ONNX/TensorRT or PyTorch mobile for edge.
-* **Libraries**: OpenCV, PyTorch (or ONNX runtime), scikit-learn (for clustering), FAISS (optional), Redis, PostgreSQL, FastAPI/uvicorn, ByteTrack or SORT for tracking.
+* **Libraries**: OpenCV, PyTorch (or ONNX runtime), scikit-learn (for clustering), FAISS (optional), Redis, PostgreSQL, ByteTrack or SORT for tracking.
 
 ---
 
@@ -73,10 +73,14 @@ The pipeline focuses on reliability for a moving camera: detection → alignment
    * Push alert messages to Redis Stream (priority field).
    * Persist raw detection frames, alert events and confirmations into PostgreSQL.
 
-6. **API & Dashboard**
+6. **Desktop UI (PySide6 Application)**
 
-   * FastAPI for queries and push notifications (WebSocket for dashboard).
-   * Dashboard UI (Streamlit / React) displays live shelf images, detections, and alert history.
+  * Native Python desktop application using PySide6 for the user interface.
+  * Live video stream display with real-time detection overlays (bounding boxes, SKU labels, planogram grid).
+  * Interactive alert panel: shows active OOS/misplacement alerts, allows staff to confirm or dismiss each alert.
+  * Frame-by-frame navigation and playback controls for reviewing historical events.
+  * Visual feedback for shelf alignment status and detection confidence.
+  * Connects directly to backend services (Redis, PostgreSQL) for alert/event updates and persistence.
 
 7. **Admin / Feedback UI**
 
@@ -84,43 +88,8 @@ The pipeline focuses on reliability for a moving camera: detection → alignment
 
 ---
 
-# 4 — Data formats & planogram spec
+# 4 — Data formats
 
-**Planogram Structure** (generated automatically, stored in DB):
-
-```json
-{
-  "shelf_id": "S_aisle5_row2",
-  "reference_image": "ref_S.jpg",
-  "grid": {
-    "rows": [
-      {
-        "row_idx": 0,
-        "avg_y": 45,
-        "items": [
-          {"item_idx": 0, "bbox": [10, 40, 50, 80], "sku_id": "sku_123"},
-          {"item_idx": 1, "bbox": [55, 42, 95, 82], "sku_id": "sku_456"},
-          ...
-        ]
-      },
-      {
-        "row_idx": 1,
-        "avg_y": 120,
-        "items": [
-          {"item_idx": 0, "bbox": [12, 115, 52, 155], "sku_id": "sku_789"},
-          ...
-        ]
-      }
-    ]
-  },
-  "clustering_params": {
-    "row_clustering_method": "dbscan",
-    "eps": 15,
-    "min_samples": 2
-  },
-  "meta": {"store": "store_01", "aisle": 5, "priority": "high"}
-}
-```
 
 **Grid Detection Algorithm** (used for both indexing and inference):
 
@@ -259,80 +228,3 @@ The pipeline focuses on reliability for a moving camera: detection → alignment
 * **Variable row lengths**: the grid detection algorithm naturally handles rows with different numbers of items by clustering and ordering independently per row.
 * **Grid alignment drift**: if current grid structure significantly differs from reference (e.g., major reorganization), flag for manual review and potential planogram re-indexing.
 * **Noise in clustering**: outlier detections may form singleton clusters; filter out rows with < min_items threshold or merge nearby clusters.
-
----
-
-# 9 — Deployment & optimization
-
-* **Model optimization**: export YOLOv11 to ONNX → convert to TensorRT / OpenVINO for lower-latency on edge devices. Quantize to INT8 if accuracy drop acceptable.
-* **Batching**: process each shelf crop as a single inference; if many shelves exist, use batch inference across crops for throughput.
-* **Edge inference**: Jetson (TensorRT), Intel NCS2 (OpenVINO), or CPU with ONNX runtime with OpenMP.
-* **Containerization**: Docker-compose or Kubernetes: services: `camera-ingest`, `shelf-localizer`, `detector`, `alert-worker`, `api`, `postgres`, `redis`.
-
-Example Docker Compose services:
-
-* `camera` (ingest)
-* `detector` (YOLOv11 + tracker)
-* `analyzer` (planogram + decision logic)
-* `alerts` (Redis consumer)
-* `api` (dashboard)
-
----
-
-# 10 — DB schema / minimal tables
-
-* `shelves(shelf_id, ref_image_path, planogram_json, clustering_params, meta)`
-  * `planogram_json`: stores the dynamically generated grid structure
-  * `clustering_params`: stores DBSCAN/clustering parameters used (eps, min_samples)
-* `detections(id, shelf_id, frame_ts, bbox, class_id, conf, track_id, row_idx, item_idx, evidence_path)`
-* `alerts(alert_id, shelf_id, row_idx, item_idx, alert_type, first_seen, last_seen, confirmed, confirmed_by)`
-* `gallery(sku_id, example_images[], embeddings[])` (for retrieval)
-
----
-
-# 11 — Metrics & testing
-
-* **Metrics to monitor**:
-
-  * Precision / Recall for OOS and misplacement events (use hand-labelled test sequences).
-  * False Positive Rate (important for staff fatigue).
-  * Time-to-alert (latency from frame to alert).
-  * Inference FPS and queue length.
-* **Offline testing**:
-
-  * Create labeled video clips with ground-truth OOS/misplacement events.
-  * Run pipeline offline and compute per-event precision/recall and per-frame detection metrics.
-* **A/B tests**:
-
-  * Try `N_confirm=3` vs `N_confirm=5` and measure operator-confirmed false positives.
-
----
-
-# 12 — Logging & observability
-
-* Collect per-frame logs: inference_time, homography_inliers, num_detections, queue_lag.
-* Instrument metrics to Prometheus and visualize in Grafana: alerts/sec, TPS, latency, GPU utilization.
-
----
-
-# 13 — Minimal MVP checklist (deliverables)
-
-1. Tooling & infra: Redis + PostgreSQL + Docker Compose skeleton.
-2. **Grid detection module**: implement DBSCAN-based clustering algorithm for row detection and item ordering (shared across indexing and inference).
-3. **Reference ingestion pipeline**:
-   - UI or script to upload reference shelf image
-   - Auto-detect SKUs and generate planogram grid structure
-   - Store in database with clustering parameters
-4. Camera ingest & shelf-localizer working on sample video.
-5. YOLOv11 inference service that returns detections in reference coords.
-6. **Dynamic planogram matcher**: applies grid detection to current frame and matches against reference grid by position.
-7. Decision logic with `N_confirm` temporal rule and alert enqueue.
-8. Simple dashboard showing live shelf crop, detections, grid overlay, and alert history with confirm/dismiss actions.
-
----
-
-# 14 — Next improvements (after MVP)
-
-* Add segmentation (SAM) or monocular depth for improved OOS detection.
-* Use active learning: when staff confirms/dismisses, create a small retraining pipeline to expand your SKU set.
-* Multi-camera fusion across time for occlusion resolution.
