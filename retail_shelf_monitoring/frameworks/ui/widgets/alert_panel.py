@@ -97,13 +97,12 @@ class AlertPanel(QWidget):
 
         for alert in sorted(
             filtered_alerts,
-            key=lambda a: (a.priority.value, a.first_seen),
+            key=lambda a: (a.first_seen),
             reverse=True,
         ):
             item = QListWidgetItem()
-            priority_str = alert.priority.value.upper()
             alert_str = alert.alert_type.value
-            text = f"[{priority_str}] {alert_str}: {alert.message}"
+            text = f"{alert_str}: {alert.message}"
             item.setText(text)
             item.setData(Qt.UserRole, alert.alert_id)
 
@@ -117,10 +116,6 @@ class AlertPanel(QWidget):
         type_filter = self.type_filter.currentData()
         if type_filter:
             alerts = [a for a in alerts if a.alert_type == type_filter]
-
-        priority_filter = self.priority_filter.currentData()
-        if priority_filter:
-            alerts = [a for a in alerts if a.priority == priority_filter]
 
         return alerts
 

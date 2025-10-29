@@ -107,13 +107,6 @@ class MainWindow(QMainWindow):
         self.shelf_combo.addItem("Test Video", ("test_shelf", video_path))
         layout.addRow("Source:", self.shelf_combo)
 
-        self.conf_spin = QSpinBox()
-        self.conf_spin.setRange(10, 95)
-        self.conf_spin.setValue(35)
-        self.conf_spin.setSuffix("%")
-        self.conf_spin.valueChanged.connect(self._on_conf_changed)
-        layout.addRow("Confidence:", self.conf_spin)
-
         self.fps_spin = QSpinBox()
         self.fps_spin.setRange(1, 60)
         self.fps_spin.setValue(30)
@@ -178,14 +171,11 @@ class MainWindow(QMainWindow):
         self.capture_thread.error_signal.connect(self._on_thread_error)
         self.capture_thread.start()
 
-        detection_use_case = self.container.detection_processing_usecase()
-        conf_threshold = self.conf_spin.value() / 100.0
+        stream_processing_use_case = self.container.stream_processing_usecase()
 
         self.inference_thread = InferenceThread(
             frame_queue=self.frame_queue,
-            detection_use_case=detection_use_case,
-            conf_threshold=conf_threshold,
-            shelf_id=self.current_shelf_id,
+            stream_processing_use_case=stream_processing_use_case,
         )
         self.inference_thread.result_signal.connect(self._on_inference_result)
         self.inference_thread.latency_signal.connect(self._on_latency_update)
@@ -237,11 +227,6 @@ class MainWindow(QMainWindow):
     @Slot(float)
     def _on_latency_update(self, latency_ms):
         self.latency_label.setText(f"Latency: {latency_ms:.0f}ms")
-
-    @Slot(int)
-    def _on_conf_changed(self, value):
-        if self.inference_thread and self.inference_thread.isRunning():
-            self.inference_thread.update_confidence(value / 100.0)
 
     @Slot(str, str)
     def _on_alert_confirmed(self, alert_id, staff_id):
