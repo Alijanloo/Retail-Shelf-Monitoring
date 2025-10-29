@@ -2,7 +2,6 @@ from datetime import datetime
 
 import pytest
 
-from retail_shelf_monitoring.adaptors.grid.grid_detector import GridDetector
 from retail_shelf_monitoring.entities.common import BoundingBox, CellState
 from retail_shelf_monitoring.entities.detection import Detection
 from retail_shelf_monitoring.entities.planogram import (
@@ -12,6 +11,7 @@ from retail_shelf_monitoring.entities.planogram import (
     PlanogramRow,
 )
 from retail_shelf_monitoring.usecases.cell_state_computation import CellStateComputation
+from retail_shelf_monitoring.usecases.grid.grid_detector import GridDetector
 
 
 @pytest.fixture

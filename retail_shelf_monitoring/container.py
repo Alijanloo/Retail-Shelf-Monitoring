@@ -3,7 +3,6 @@ from datetime import timedelta
 from dependency_injector import containers, providers
 from redis import Redis
 
-from .adaptors.grid.grid_detector import GridDetector
 from .adaptors.messaging.alert_publisher import AlertPublisher
 from .adaptors.messaging.redis_stream import RedisStreamClient
 from .adaptors.ml.sku_detector import SKUDetector
@@ -17,9 +16,6 @@ from .adaptors.repositories.postgres_planogram_repository import (
 from .adaptors.tracking.bytetrack import SimpleTracker
 from .adaptors.video.frame_extractor import FrameExtractor
 from .adaptors.video.keyframe_selector import KeyframeSelector
-from .adaptors.vision.feature_matcher import FeatureMatcher
-from .adaptors.vision.homography import HomographyEstimator
-from .adaptors.vision.image_aligner import ShelfAligner
 from .frameworks.config import AppConfig
 from .frameworks.database import DatabaseManager
 from .frameworks.logging_config import get_logger
@@ -28,8 +24,11 @@ from .frameworks.streaming.stream_manager import StreamManager
 from .usecases.alert_generation import AlertGenerationUseCase, AlertManagementUseCase
 from .usecases.cell_state_computation import CellStateComputation
 from .usecases.detection_processing import DetectionProcessingUseCase
+from .usecases.grid.grid_detector import GridDetector
 from .usecases.planogram_generation import PlanogramGenerationUseCase
-from .usecases.stream_processing import StreamProcessingUseCase
+from .usecases.shelf_aligner.feature_matcher import FeatureMatcher
+from .usecases.shelf_aligner.homography import HomographyEstimator
+from .usecases.shelf_aligner.shelf_aligner import ShelfAligner
 from .usecases.temporal_consensus import TemporalConsensusManager
 
 
@@ -125,12 +124,6 @@ class ApplicationContainer(containers.DeclarativeContainer):
         detector=yolo_detector,
         sku_detector=sku_detector,
         grid_detector=grid_detector,
-    )
-
-    stream_processing_usecase = providers.Factory(
-        StreamProcessingUseCase,
-        shelf_aligner=shelf_aligner,
-        output_dir=config.provided.alignment.output_dir,
     )
 
     detection_processing_usecase = providers.Factory(

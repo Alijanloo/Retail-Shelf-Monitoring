@@ -1,14 +1,13 @@
 from pathlib import Path
-from typing import Optional
 
 import cv2
 
-from ..adaptors.grid.grid_detector import GridDetector
 from ..adaptors.ml.sku_detector import SKUDetector
 from ..adaptors.ml.yolo_detector import YOLOv11Detector
 from ..entities.planogram import Planogram
-from ..frameworks.exceptions import EntityNotFoundError, ValidationError
+from ..frameworks.exceptions import ValidationError
 from ..frameworks.logging_config import get_logger
+from ..usecases.grid.grid_detector import GridDetector
 from .interfaces.repositories import PlanogramRepository
 
 logger = get_logger(__name__)
@@ -96,20 +95,3 @@ class PlanogramGenerationUseCase:
         )
 
         return saved_planogram
-
-    async def regenerate_planogram(
-        self, shelf_id: str, new_reference_image_path: Optional[str] = None
-    ) -> Planogram:
-        existing = await self.planogram_repository.get_by_shelf_id(shelf_id)
-        if not existing:
-            raise EntityNotFoundError("Planogram", shelf_id)
-
-        ref_image_path = new_reference_image_path or existing.reference_image_path
-
-        return await self.generate_planogram_from_reference(
-            shelf_id=shelf_id,
-            reference_image_path=ref_image_path,
-            clustering_method=existing.clustering_params.row_clustering_method,
-            eps=existing.clustering_params.eps,
-            min_samples=existing.clustering_params.min_samples,
-        )

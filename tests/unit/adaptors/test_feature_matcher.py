@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
 
-from retail_shelf_monitoring.adaptors.vision.feature_matcher import FeatureMatcher
+from retail_shelf_monitoring.usecases.shelf_aligner.feature_matcher import (
+    FeatureMatcher,
+)
 
 
 class TestFeatureMatcher:

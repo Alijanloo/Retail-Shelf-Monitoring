@@ -1,7 +1,7 @@
 import pytest
 
-from retail_shelf_monitoring.adaptors.grid.grid_detector import GridDetector
 from retail_shelf_monitoring.entities.planogram import PlanogramGrid
+from retail_shelf_monitoring.usecases.grid.grid_detector import GridDetector
 
 
 class TestGridDetector:

@@ -7,7 +7,7 @@ import numpy as np
 from ...entities.frame import Frame
 from ...frameworks.logging_config import get_logger
 from .feature_matcher import FeatureMatcher
-from .homography import HomographyEstimator
+from .homography import HomographyEstimator, HomographyResult
 
 logger = get_logger(__name__)
 
@@ -70,23 +70,9 @@ class ShelfAligner:
         best_confidence = 0.0
 
         for shelf_id in shelf_ids:
-            ref_data = self.reference_features[shelf_id]
+            ref_data, homography_result = self.align_to_specific_shelf(frame, shelf_id)
 
-            match_result = self.feature_matcher.match_features(
-                query_image=frame,
-                ref_image=ref_data["image"],
-                ref_keypoints=ref_data["keypoints"],
-                ref_descriptors=ref_data["descriptors"],
-            )
-
-            if match_result.num_matches < 10:
-                continue
-
-            homography_result = self.homography_estimator.estimate_homography(
-                match_result
-            )
-
-            if not homography_result.is_valid:
+            if not homography_result:
                 continue
 
             confidence = homography_result.inlier_ratio
@@ -129,10 +115,10 @@ class ShelfAligner:
 
     def align_to_specific_shelf(
         self, frame: np.ndarray, shelf_id: str
-    ) -> Optional[Tuple[np.ndarray, object]]:
+    ) -> Tuple[Dict, HomographyResult]:
         if shelf_id not in self.reference_features:
             logger.warning(f"Reference shelf not loaded: {shelf_id}")
-            return None
+            return None, None
 
         ref_data = self.reference_features[shelf_id]
 
@@ -155,9 +141,4 @@ class ShelfAligner:
             logger.warning(f"Invalid homography for shelf {shelf_id}")
             return None
 
-        ref_height, ref_width = ref_data["image"].shape[:2]
-        aligned_image = self.homography_estimator.warp_image(
-            frame, homography_result.matrix, (ref_width, ref_height)
-        )
-
-        return aligned_image, homography_result
+        return ref_data, homography_result

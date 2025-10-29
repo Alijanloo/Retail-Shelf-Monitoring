@@ -1,6 +1,6 @@
 import pytest
 
-from retail_shelf_monitoring.adaptors.grid.clustering import (
+from retail_shelf_monitoring.usecases.grid.clustering import (
     ClusterItem,
     ItemSorter,
     RowClusterer,

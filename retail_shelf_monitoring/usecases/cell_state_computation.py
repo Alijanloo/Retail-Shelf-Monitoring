@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Dict, List
 
-from ..adaptors.grid.grid_detector import GridDetector
 from ..entities.common import CellState
 from ..entities.detection import Detection
 from ..entities.planogram import Planogram
 from ..frameworks.logging_config import get_logger
+from ..usecases.grid.grid_detector import GridDetector
 
 logger = get_logger(__name__)
 

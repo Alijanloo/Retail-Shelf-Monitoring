@@ -2,11 +2,13 @@ import cv2
 import numpy as np
 import pytest
 
-from retail_shelf_monitoring.adaptors.vision.feature_matcher import (
+from retail_shelf_monitoring.usecases.shelf_aligner.feature_matcher import (
     FeatureMatcher,
     FeatureMatchResult,
 )
-from retail_shelf_monitoring.adaptors.vision.homography import HomographyEstimator
+from retail_shelf_monitoring.usecases.shelf_aligner.homography import (
+    HomographyEstimator,
+)
 
 
 class TestHomographyEstimator:
