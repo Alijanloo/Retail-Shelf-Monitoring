@@ -29,6 +29,7 @@ class PlanogramModel(Base):
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
+    alerts = relationship("AlertModel", cascade="all, delete-orphan")
 
 
 class AlertModel(Base):
