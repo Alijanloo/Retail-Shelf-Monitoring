@@ -122,7 +122,7 @@ class GridDetector:
 
         try:
             current_grid, _ = self.detect_grid(current_detections)
-        except ValueError:
+        except ValueError as e:  # noqa: F841
             missing = []
             for ref_row in reference_grid.rows:
                 for ref_item in ref_row.items:
@@ -140,7 +140,6 @@ class GridDetector:
                 "reference_total": reference_grid.total_items,
                 "current_total": 0,
             }
-
         matches = []
         mismatches = []
         missing = []

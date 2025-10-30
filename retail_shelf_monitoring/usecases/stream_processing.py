@@ -1,3 +1,4 @@
+from ast import Dict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
@@ -8,6 +9,7 @@ from ..adaptors.keyframe_selector import KeyframeSelector
 from ..entities.alert import Alert
 from ..entities.detection import Detection
 from ..entities.frame import Frame
+from ..entities.planogram import Planogram
 from ..frameworks.logging_config import get_logger
 from .alert_generation import AlertGenerationUseCase
 from .cell_state_computation import CellStateComputation
@@ -60,6 +62,9 @@ class StreamProcessingUseCase:
         self.tracker = tracker
         self.keyframe_selector = keyframe_selector
 
+        self._last_frame: Optional[Frame] = None
+        self._planograms: Dict[str, Planogram] = {}
+
     async def process_frame(
         self,
         frame_img: np.ndarray,
@@ -73,51 +78,48 @@ class StreamProcessingUseCase:
         )
 
         frame = self.keyframe_selector.is_keyframe(frame)
-        if not frame.is_keyframe:
-            return StreamProcessingResult(
-                success=False,
-                frame=frame,
-                reason="not_keyframe",
-            )
+        if frame.is_keyframe:
+            frame = self.shelf_aligner.align_to_best_reference(frame)
+            if not frame.shelf_id:
+                logger.debug("No shelf alignment found for frame")
+                self._last_frame = frame
+                return StreamProcessingResult(
+                    success=False,
+                    frame=frame,
+                    reason="no_alignment",
+                )
+            detections = self.detection_processing.process_aligned_frame(frame)
 
-        frame = self.shelf_aligner.align_to_best_reference(frame)
-
-        if not frame.shelf_id:
-            logger.debug("No shelf alignment found for frame")
-            return StreamProcessingResult(
-                success=False,
-                frame=frame,
-                reason="no_alignment",
-            )
-
-        detections = self.detection_processing.process_aligned_frame(frame)
-
-        if self.tracker and detections:
-            self.tracker.update(detections)
+            if self.tracker and detections:
+                self.tracker.update(detections)
+        else:
+            detections = self.tracker.predict()
+            frame = self._last_frame
 
         if not detections:
             logger.debug(f"No detections for shelf {frame.shelf_id}")
-            return StreamProcessingResult(
-                success=True,
-                frame=frame,
-                shelf_id=frame.shelf_id,
-            )
+            self._last_frame = frame
+            return StreamProcessingResult(success=True, frame=frame)
 
-        planogram = await self.planogram_repository.get_by_shelf_id(frame.shelf_id)
-        if not planogram:
-            logger.debug(
-                f"No planogram found for shelf {frame.shelf_id}, "
-                "returning detections only!"
-            )
-            return StreamProcessingResult(
-                success=True,
-                frame=frame,
-                detections=detections,
-                reason="no_planogram",
-            )
+        if frame.shelf_id not in self._planograms:
+            self._planograms[
+                frame.shelf_id
+            ] = await self.planogram_repository.get_by_shelf_id(frame.shelf_id)
+            if not self._planograms[frame.shelf_id]:
+                logger.debug(
+                    f"No planogram found for shelf {frame.shelf_id}, "
+                    "returning detections only!"
+                )
+                self._last_frame = frame
+                return StreamProcessingResult(
+                    success=True,
+                    frame=frame,
+                    detections=detections,
+                    reason="no_planogram",
+                )
 
         cell_state_result = self.cell_state_computation.compute_cell_states(
-            planogram=planogram,
+            planogram=self._planograms[frame.shelf_id],
             detections=detections,
             frame_timestamp=timestamp,
         )
@@ -150,6 +152,7 @@ class StreamProcessingUseCase:
             f"{len(generated_alerts)} new alerts"
         )
 
+        self._last_frame = frame
         return StreamProcessingResult(
             success=True,
             frame=frame,

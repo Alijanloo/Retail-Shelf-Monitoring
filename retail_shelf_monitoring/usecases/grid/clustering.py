@@ -82,7 +82,7 @@ class RowClusterer:
 class ItemSorter:
     @staticmethod
     def sort_items_by_x(items: List[ClusterItem]) -> List[ClusterItem]:
-        return sorted(items, key=lambda item: item.center[0])
+        return sorted(items, key=lambda item: item.bbox[0])
 
     @staticmethod
     def assign_indices(

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from ..entities.common import AlertType, CellState
@@ -22,13 +22,13 @@ class CellTemporalState:
     consecutive_ok_frames: int = 0
 
     last_detected_sku: Optional[str] = None
-    last_update_time: datetime = field(default_factory=datetime.utcnow)
+    last_update_time: datetime = field(default_factory=datetime.now(timezone.utc))
 
     state_history: List[CellState] = field(default_factory=list)
     max_history_length: int = 10
 
     def update(self, new_state: CellState, detected_sku: Optional[str] = None):
-        self.last_update_time = datetime.utcnow()
+        self.last_update_time = datetime.now(timezone.utc)()
         self.last_detected_sku = detected_sku
 
         self.state_history.append(new_state)
@@ -192,7 +192,7 @@ class TemporalConsensusManager:
         }
 
     def _cleanup_stale_states(self):
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
 
         for shelf_id in list(self.cell_states.keys()):
             for cell_key in list(self.cell_states[shelf_id].keys()):

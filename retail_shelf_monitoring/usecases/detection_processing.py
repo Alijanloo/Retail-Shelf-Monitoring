@@ -22,7 +22,7 @@ class DetectionProcessingUseCase:
 
     def process_aligned_frame(self, frame: Frame) -> List[Detection]:
         """
-        Run detection on aligned frame, apply tracking, and persist results
+        Run detection on an aligned frame
         """
 
         detections = self.detector.detect(frame.frame_img)
