@@ -213,9 +213,9 @@ class MainWindow(QMainWindow):
         except queue.Full:
             pass
 
-    @Slot(list, str)
-    def _on_inference_result(self, detections, shelf_id):
-        self.video_widget.update_detections(detections)
+    @Slot(list, str, object)
+    def _on_inference_result(self, detections, shelf_id, homography_matrix):
+        self.video_widget.update_detections(detections, homography_matrix)
 
     @Slot(float)
     def _on_fps_update(self, fps):

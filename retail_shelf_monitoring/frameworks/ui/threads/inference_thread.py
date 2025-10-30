@@ -2,7 +2,7 @@ import asyncio
 import queue
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from PySide6.QtCore import QThread, Signal
 
@@ -13,7 +13,8 @@ logger = get_logger(__name__)
 
 
 class InferenceThread(QThread):
-    result_signal = Signal(list, str)
+    # Emit detections, shelf_id and homography matrix (flattened list or None)
+    result_signal = Signal(list, str, object)
     error_signal = Signal(str)
     latency_signal = Signal(float)
 
@@ -47,7 +48,7 @@ class InferenceThread(QThread):
                     self.stream_processing_use_case.process_frame(
                         frame_img=frame,
                         frame_id=frame_id,
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(timezone.utc),
                     )
                 )
 
@@ -56,7 +57,9 @@ class InferenceThread(QThread):
 
                 if result.success:
                     self.result_signal.emit(
-                        result.detections, result.shelf_id or "unknown"
+                        result.detections,
+                        result.frame.shelf_id or "unknown",
+                        result.frame.homography_matrix,
                     )
                 else:
                     logger.debug(

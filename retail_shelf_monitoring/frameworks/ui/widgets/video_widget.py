@@ -25,6 +25,7 @@ class VideoWidget(QLabel):
         self.show_detections = True
         self.show_grid = False
         self.planogram_grid = None
+        self.homography_matrix = None
 
         self.update_timer = QTimer()
         self.update_timer.setInterval(33)
@@ -40,9 +41,14 @@ class VideoWidget(QLabel):
     def update_frame(self, frame_bgr: np.ndarray, timestamp: str = None):
         self.current_frame = frame_bgr.copy()
 
-    @Slot(list)
-    def update_detections(self, detections: List[Detection]):
+    @Slot(list, object)
+    def update_detections(self, detections: List[Detection], homography_matrix=None):
         self.detections = detections
+        self.homography_matrix = (
+            np.array(homography_matrix).reshape(3, 3)
+            if homography_matrix is not None
+            else None
+        )
 
     def render_frame(self):
         if self.current_frame is None:
@@ -72,10 +78,42 @@ class VideoWidget(QLabel):
     def _draw_detections(
         self, frame: np.ndarray, detections: List[Detection]
     ) -> np.ndarray:
+        # If detections are produced in aligned (reference) coordinates we
+        # receive a homography mapping original->reference. To draw boxes on
+        # the raw frame, map bbox corners from reference back to original by
+        # applying the inverse homography.
+        H_inv = None
+        if self.homography_matrix is not None:
+            try:
+                H_inv = np.linalg.inv(self.homography_matrix)
+            except Exception:
+                H_inv = None
+
         for detection in detections:
             bbox = detection.bbox
-            x1, y1 = int(bbox.x1), int(bbox.y1)
-            x2, y2 = int(bbox.x2), int(bbox.y2)
+
+            if H_inv is not None:
+                # map bbox corners from reference to original frame coords
+                pts_ref = np.array(
+                    [
+                        [bbox.x1, bbox.y1, 1.0],
+                        [bbox.x2, bbox.y1, 1.0],
+                        [bbox.x2, bbox.y2, 1.0],
+                        [bbox.x1, bbox.y2, 1.0],
+                    ]
+                )
+
+                pts_orig = (H_inv @ pts_ref.T).T
+                pts_orig = pts_orig[:, :2] / pts_orig[:, 2, None]
+
+                xs = pts_orig[:, 0]
+                ys = pts_orig[:, 1]
+
+                x1, x2 = int(max(0, np.min(xs))), int(min(frame.shape[1], np.max(xs)))
+                y1, y2 = int(max(0, np.min(ys))), int(min(frame.shape[0], np.max(ys)))
+            else:
+                x1, y1 = int(bbox.x1), int(bbox.y1)
+                x2, y2 = int(bbox.x2), int(bbox.y2)
 
             color = (0, 255, 0)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
