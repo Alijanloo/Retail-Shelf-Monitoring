@@ -22,13 +22,15 @@ class CellTemporalState:
     consecutive_ok_frames: int = 0
 
     last_detected_sku: Optional[str] = None
-    last_update_time: datetime = field(default_factory=datetime.now(timezone.utc))
+    last_update_time: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
 
     state_history: List[CellState] = field(default_factory=list)
     max_history_length: int = 10
 
     def update(self, new_state: CellState, detected_sku: Optional[str] = None):
-        self.last_update_time = datetime.now(timezone.utc)()
+        self.last_update_time = datetime.now(timezone.utc)
         self.last_detected_sku = detected_sku
 
         self.state_history.append(new_state)

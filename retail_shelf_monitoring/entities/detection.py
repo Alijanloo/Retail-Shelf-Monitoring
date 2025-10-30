@@ -23,7 +23,7 @@ class Detection(BaseModel):
     item_idx: Optional[int] = Field(
         None, ge=0, description="Assigned planogram item index"
     )
-    created_at: datetime = Field(default_factory=datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @validator("confidence")
     def confidence_reasonable(cls, v):

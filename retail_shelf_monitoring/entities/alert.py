@@ -36,8 +36,8 @@ class Alert(BaseModel):
     consecutive_frames: int = Field(
         default=1, ge=1, description="Number of consecutive frames with issue"
     )
-    created_at: datetime = Field(default_factory=datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @validator("confirmed_at")
     def confirmed_at_requires_confirmed(cls, v, values):

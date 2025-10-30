@@ -9,8 +9,8 @@ class SKU(BaseModel):
     name: str = Field(..., min_length=1, description="Product name")
     category: Optional[str] = Field(None, description="Product category")
     barcode: Optional[str] = Field(None, description="Product barcode")
-    created_at: datetime = Field(default_factory=datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:
         frozen = False
