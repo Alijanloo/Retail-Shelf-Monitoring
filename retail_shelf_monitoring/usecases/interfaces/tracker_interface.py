@@ -19,6 +19,16 @@ class Tracker(ABC):
         pass
 
     @abstractmethod
+    def predict(self) -> List[Detection]:
+        """
+        Predict the current state of tracked objects
+
+        Returns:
+            List of predicted Detection objects
+        """
+        pass
+
+    @abstractmethod
     def reset(self):
         """Reset tracker state"""
         pass
