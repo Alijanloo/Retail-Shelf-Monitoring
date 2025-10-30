@@ -57,3 +57,7 @@ class AlertRepository(ABC):
     @abstractmethod
     async def dismiss_alert(self, alert_id: str) -> Alert:
         pass
+
+    @abstractmethod
+    async def delete_index(self) -> bool:
+        pass

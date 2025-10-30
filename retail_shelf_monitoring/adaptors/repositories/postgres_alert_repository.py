@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from sqlalchemy import and_
+from sqlalchemy import and_, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -111,7 +111,7 @@ class PostgresAlertRepository(AlertRepository):
             db_alert.last_seen = alert.last_seen
             db_alert.consecutive_frames = alert.consecutive_frames
             db_alert.evidence_paths = alert.evidence_paths
-            db_alert.updated_at = datetime.utcnow()
+            db_alert.updated_at = datetime.now(timezone.utc)
 
             session.commit()
             session.refresh(db_alert)
@@ -133,8 +133,8 @@ class PostgresAlertRepository(AlertRepository):
 
             db_alert.confirmed = True
             db_alert.confirmed_by = confirmed_by
-            db_alert.confirmed_at = datetime.utcnow()
-            db_alert.updated_at = datetime.utcnow()
+            db_alert.confirmed_at = datetime.now(timezone.utc)
+            db_alert.updated_at = datetime.now(timezone.utc)
 
             session.commit()
             session.refresh(db_alert)
@@ -157,7 +157,7 @@ class PostgresAlertRepository(AlertRepository):
                 raise EntityNotFoundError("Alert", alert_id)
 
             db_alert.dismissed = True
-            db_alert.updated_at = datetime.utcnow()
+            db_alert.updated_at = datetime.now(timezone.utc)
 
             session.commit()
             session.refresh(db_alert)
@@ -169,6 +169,20 @@ class PostgresAlertRepository(AlertRepository):
         except IntegrityError as e:
             session.rollback()
             raise DatabaseError(f"Failed to dismiss alert: {str(e)}")
+        finally:
+            session.close()
+
+    async def delete_index(self) -> bool:
+        session: Session = self.session_factory()
+        try:
+            session.execute(text("DROP TABLE IF EXISTS alerts CASCADE;"))
+            session.commit()
+            logger.info("alerts table dropped successfully.")
+            return True
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Failed to drop alerts table: {str(e)}")
+            return False
         finally:
             session.close()
 
