@@ -93,8 +93,16 @@ class StreamProcessingUseCase:
             if self.tracker and detections:
                 self.tracker.update(detections)
         else:
-            detections = self.tracker.predict()
             frame = self._last_frame
+            if not frame.shelf_id:
+                logger.debug("No shelf alignment found for frame")
+                self._last_frame = frame
+                return StreamProcessingResult(
+                    success=False,
+                    frame=frame,
+                    reason="no_alignment",
+                )
+            detections = self.tracker.predict()
 
         if not detections:
             logger.debug(f"No detections for shelf {frame.shelf_id}")

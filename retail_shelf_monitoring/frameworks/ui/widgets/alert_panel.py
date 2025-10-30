@@ -102,7 +102,10 @@ class AlertPanel(QWidget):
         ):
             item = QListWidgetItem()
             alert_str = alert.alert_type.value
-            text = f"{alert_str}: {alert.message}"
+            text = (
+                f"{alert_str}: expected {alert.expected_sku}, "
+                f"detected {alert.detected_sku}"
+            )
             item.setText(text)
             item.setData(Qt.UserRole, alert.alert_id)
 
@@ -110,7 +113,7 @@ class AlertPanel(QWidget):
 
         self._update_stats()
 
-    def _get_filtered_alerts(self):
+    def _get_filtered_alerts(self) -> list[Alert]:
         alerts = list(self.alerts.values())
 
         type_filter = self.type_filter.currentData()

@@ -271,6 +271,12 @@ def main():
     container = ApplicationContainer()
     container.init_resources()
 
+    alert_repo = container.alert_repository()
+    asyncio.run(alert_repo.delete_index())
+
+    db_mng = container.database_manager()
+    db_mng.create_tables()
+
     window = MainWindow(container)
     window.resize(1400, 900)
     window.show()
