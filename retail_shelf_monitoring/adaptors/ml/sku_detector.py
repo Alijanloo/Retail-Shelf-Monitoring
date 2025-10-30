@@ -109,11 +109,12 @@ class SKUDetector:
             Normalized embedding vector (L2 normalized)
         """
         tensor = self.preprocess_image(image)
+        infer_request = self.compiled_model.create_infer_request()
 
         input_name = self.input_layer.any_name
         output_name = self.output_layer.any_name
 
-        embedding = self.infer_request.infer({input_name: tensor})[output_name]
+        embedding = infer_request.infer({input_name: tensor})[output_name]
 
         embedding = embedding / np.linalg.norm(embedding, axis=1, keepdims=True)
 
@@ -287,11 +288,6 @@ class SKUDetector:
         best_sku, best_distance = top_results[0]
 
         confidence = 1.0 / (1.0 + best_distance)
-
-        logger.debug(
-            f"Identified SKU: {best_sku} (distance: {best_distance:.4f}, "
-            f"confidence: {confidence:.4f})"
-        )
 
         return best_sku, confidence, top_results
 

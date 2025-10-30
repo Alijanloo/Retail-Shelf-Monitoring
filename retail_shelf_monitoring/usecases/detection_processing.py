@@ -1,4 +1,5 @@
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 from ..adaptors.ml.sku_detector import SKUDetector
@@ -24,15 +25,13 @@ class DetectionProcessingUseCase:
         """
         Run detection on an aligned frame
         """
-
         detections = self.detector.detect(frame.frame_img)
 
         if not detections:
             logger.debug(f"No detections in frame {frame.frame_id}")
             return []
 
-        detection_entities = []
-        for det in detections:
+        def process_detection(det):
             x1, y1, x2, y2 = det["bbox"]
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
@@ -48,7 +47,7 @@ class DetectionProcessingUseCase:
                 logger.warning(f"Invalid bbox for detection: {det['bbox']}")
                 sku_id = "invalid_bbox"
 
-            detection = Detection(
+            return Detection(
                 detection_id=str(uuid.uuid4()),
                 shelf_id=frame.shelf_id,
                 frame_timestamp=frame.timestamp,
@@ -64,11 +63,7 @@ class DetectionProcessingUseCase:
                 track_id=det.get("track_id"),
             )
 
-            detection_entities.append(detection)
-
-        logger.info(
-            f"Processed frame {frame.frame_id}: "
-            f"{len(detection_entities)} detections created"
-        )
+        with ThreadPoolExecutor() as executor:
+            detection_entities = list(executor.map(process_detection, detections))
 
         return detection_entities
