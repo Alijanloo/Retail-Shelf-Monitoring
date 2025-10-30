@@ -3,6 +3,7 @@ from typing import List
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
+from retail_shelf_monitoring.entities.common import BoundingBox
 from retail_shelf_monitoring.entities.detection import Detection
 from retail_shelf_monitoring.frameworks.logging_config import get_logger
 from retail_shelf_monitoring.usecases.interfaces.tracker_interface import Tracker
@@ -66,7 +67,17 @@ class KalmanBoxTracker:
 
     count = 0
 
-    def __init__(self, bbox):
+    def __init__(self, detection: Detection):
+        # store the full detection object
+        self.detection = detection
+        # extract bbox for kalman filter initialization
+        bbox = [
+            detection.bbox.x1,
+            detection.bbox.y1,
+            detection.bbox.x2,
+            detection.bbox.y2,
+        ]
+
         # initialize state
         self._x = np.zeros((7, 1))
         z = convert_bbox_to_z(bbox)
@@ -112,9 +123,22 @@ class KalmanBoxTracker:
         # return predicted bbox
         return convert_x_to_bbox(self._x[:4].flatten())
 
-    def update(self, bbox):
-        """Update with measurement bbox (x1,y1,x2,y2)"""
+    def update(self, detection: Detection):
+        """Update with measurement detection"""
+        # extract bbox from detection
+        bbox = [
+            detection.bbox.x1,
+            detection.bbox.y1,
+            detection.bbox.x2,
+            detection.bbox.y2,
+        ]
         z = convert_bbox_to_z(bbox)
+
+        # update stored detection with new information
+        self.detection = detection
+        # ensure track_id is preserved/set
+        self.detection.track_id = self.id
+
         # Kalman gain
         S = self._H @ self._P @ self._H.T + self._R
         K = self._P @ self._H.T @ np.linalg.inv(S)
@@ -129,6 +153,21 @@ class KalmanBoxTracker:
 
     def get_state(self):
         return convert_x_to_bbox(self._x.flatten())
+
+    def get_detection(self) -> Detection:
+        """Get current detection with updated bbox from Kalman state"""
+        bbox_coords = convert_x_to_bbox(self._x.flatten()).flatten()
+
+        updated_detection = self.detection.model_copy(deep=True)
+        updated_detection.bbox = BoundingBox(
+            x1=float(bbox_coords[0]),
+            y1=float(bbox_coords[1]),
+            x2=float(bbox_coords[2]),
+            y2=float(bbox_coords[3]),
+        )
+        updated_detection.track_id = self.id
+
+        return updated_detection
 
 
 class SortTracker(Tracker):
@@ -167,9 +206,8 @@ class SortTracker(Tracker):
         # === if no trackers, create trackers for all detections ===
         if len(self.trackers) == 0:
             for det in detections:
-                bbox_arr = [det.bbox.x1, det.bbox.y1, det.bbox.x2, det.bbox.y2]
-                self.trackers.append(KalmanBoxTracker(bbox_arr))
-            for det, trk in zip(detections, self.trackers):
+                trk = KalmanBoxTracker(det)
+                self.trackers.append(trk)
                 det.track_id = trk.id
             return detections
 
@@ -211,19 +249,13 @@ class SortTracker(Tracker):
 
         # === update matched trackers with assigned detections ===
         for d, t in matches:
-            self.trackers[t].update(dets[d])
+            self.trackers[t].update(detections[d])
             # attach track id to detection
             detections[d].track_id = self.trackers[t].id
 
         # === create new trackers for unmatched detections ===
         for idx in unmatched_dets_idx:
-            bbox_arr = [
-                detections[idx].bbox.x1,
-                detections[idx].bbox.y1,
-                detections[idx].bbox.x2,
-                detections[idx].bbox.y2,
-            ]
-            trk = KalmanBoxTracker(bbox_arr)
+            trk = KalmanBoxTracker(detections[idx])
             self.trackers.append(trk)
             detections[idx].track_id = trk.id
 
@@ -246,6 +278,15 @@ class SortTracker(Tracker):
         logger.debug(
             f"SORT update: frame={self.frame_count}, trackers={len(self.trackers)}"
         )
+        return detections
+
+    def predict(self) -> List[Detection]:
+        detections = []
+        for trk in self.trackers:
+            trk.predict()  # updates internal state
+            # get detection with predicted bbox
+            predicted_detection = trk.get_detection()
+            detections.append(predicted_detection)
         return detections
 
     def reset(self):
