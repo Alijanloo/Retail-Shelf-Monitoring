@@ -1,9 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from ..entities.alert import Alert
-from ..frameworks.exceptions import EntityNotFoundError
 from ..frameworks.logging_config import get_logger
 from ..usecases.interfaces.repositories import AlertRepository, PlanogramRepository
 
@@ -37,7 +36,7 @@ class AlertGenerationUseCase:
             and not existing_alert.confirmed
             and not existing_alert.dismissed
         ):
-            existing_alert.last_seen = datetime.utcnow()
+            existing_alert.last_seen = datetime.now(timezone.utc)
             existing_alert.consecutive_frames = alert_data["consecutive_frames"]
             if evidence_paths:
                 existing_alert.evidence_paths.extend(evidence_paths)
@@ -45,10 +44,6 @@ class AlertGenerationUseCase:
             updated_alert = await self.alert_repository.update(existing_alert)
             logger.info(f"Updated existing alert: {updated_alert.alert_id}")
             return updated_alert
-
-        planogram = await self.planogram_repository.get_by_shelf_id(shelf_id)
-        if not planogram:
-            raise EntityNotFoundError("Planogram", shelf_id)
 
         alert = Alert(
             alert_id=str(uuid.uuid4()),
@@ -58,8 +53,8 @@ class AlertGenerationUseCase:
             alert_type=alert_data["alert_type"],
             expected_sku=alert_data["expected_sku"],
             detected_sku=alert_data.get("detected_sku"),
-            first_seen=datetime.utcnow(),
-            last_seen=datetime.utcnow(),
+            first_seen=datetime.now(timezone.utc),
+            last_seen=datetime.now(timezone.utc),
             evidence_paths=evidence_paths or [],
             consecutive_frames=alert_data["consecutive_frames"],
         )

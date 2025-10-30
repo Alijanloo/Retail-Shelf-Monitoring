@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -9,7 +9,7 @@ from retail_shelf_monitoring.entities.detection import Detection
 class TestDetection:
     def test_detection_creation(self):
         bbox = BoundingBox(x1=10.0, y1=20.0, x2=100.0, y2=120.0)
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         detection = Detection(
             shelf_id="SHELF-001",
             frame_timestamp=timestamp,
@@ -28,7 +28,7 @@ class TestDetection:
         bbox = BoundingBox(x1=10.0, y1=20.0, x2=100.0, y2=120.0)
         detection = Detection(
             shelf_id="SHELF-001",
-            frame_timestamp=datetime.utcnow(),
+            frame_timestamp=datetime.now(timezone.utc),
             bbox=bbox,
             class_id=5,
             confidence=0.95,
@@ -40,7 +40,7 @@ class TestDetection:
         bbox = BoundingBox(x1=10.0, y1=20.0, x2=100.0, y2=120.0)
         detection = Detection(
             shelf_id="SHELF-001",
-            frame_timestamp=datetime.utcnow(),
+            frame_timestamp=datetime.now(timezone.utc),
             bbox=bbox,
             class_id=5,
             confidence=0.95,
@@ -56,7 +56,7 @@ class TestDetection:
         with pytest.raises(ValueError, match="unreasonably low"):
             Detection(
                 shelf_id="SHELF-001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=bbox,
                 class_id=5,
                 confidence=0.05,
@@ -68,7 +68,7 @@ class TestDetection:
         with pytest.raises(Exception):
             Detection(
                 shelf_id="SHELF-001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=bbox,
                 class_id=5,
                 confidence=1.5,
@@ -77,7 +77,7 @@ class TestDetection:
         with pytest.raises(Exception):
             Detection(
                 shelf_id="SHELF-001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=bbox,
                 class_id=5,
                 confidence=-0.1,
@@ -87,7 +87,7 @@ class TestDetection:
         bbox = BoundingBox(x1=10.0, y1=20.0, x2=100.0, y2=120.0)
         detection = Detection(
             shelf_id="SHELF-001",
-            frame_timestamp=datetime.utcnow(),
+            frame_timestamp=datetime.now(timezone.utc),
             bbox=bbox,
             class_id=5,
             confidence=0.95,

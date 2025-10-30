@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -8,7 +8,7 @@ from retail_shelf_monitoring.entities.common import AlertType
 
 class TestAlert:
     def test_alert_creation(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         alert = Alert(
             shelf_id="SHELF-001",
             row_idx=0,
@@ -27,7 +27,7 @@ class TestAlert:
         assert alert.dismissed is False
 
     def test_alert_misplacement_type(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         alert = Alert(
             shelf_id="SHELF-001",
             row_idx=1,
@@ -42,7 +42,7 @@ class TestAlert:
         assert alert.detected_sku == "SKU-456"
 
     def test_alert_confirmation_validation(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         with pytest.raises(
             ValueError, match="confirmed_at can only be set when confirmed is True"
@@ -59,7 +59,7 @@ class TestAlert:
             )
 
     def test_alert_confirmed_by_validation(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         with pytest.raises(
             ValueError, match="confirmed_by can only be set when confirmed is True"
@@ -76,7 +76,7 @@ class TestAlert:
             )
 
     def test_alert_confirmed(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         alert = Alert(
             shelf_id="SHELF-001",
             row_idx=0,
@@ -93,7 +93,7 @@ class TestAlert:
         assert alert.confirmed_at == now
 
     def test_alert_evidence_paths(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         evidence = ["/path/to/frame1.jpg", "/path/to/frame2.jpg"]
         alert = Alert(
             shelf_id="SHELF-001",
@@ -107,7 +107,7 @@ class TestAlert:
         assert alert.evidence_paths == evidence
 
     def test_alert_consecutive_frames(self):
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         alert = Alert(
             shelf_id="SHELF-001",
             row_idx=0,

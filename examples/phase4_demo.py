@@ -11,7 +11,7 @@ This script demonstrates:
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import cv2
@@ -51,7 +51,7 @@ async def main():
         test_shelf_id = "shelf_517"
 
         # Generate planogram from reference image
-        reference_image_path = Path("data/reference_shelves/517_missplaced.png")
+        reference_image_path = Path("data/reference_shelves/shelf_517.png")
         if not reference_image_path.exists():
             logger.error(
                 "   Reference image not found! Please add a reference shelf image."
@@ -114,7 +114,7 @@ async def main():
     frame_metadata = Frame(
         frame_id=test_frame_path.stem,
         frame_number=0,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         stream_id="test_stream",
         width=test_image.shape[1],
         height=test_image.shape[0],

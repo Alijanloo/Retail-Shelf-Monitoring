@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
@@ -36,8 +36,8 @@ class Alert(BaseModel):
     consecutive_frames: int = Field(
         default=1, ge=1, description="Number of consecutive frames with issue"
     )
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=datetime.now(timezone.utc))
 
     @validator("confirmed_at")
     def confirmed_at_requires_confirmed(cls, v, values):

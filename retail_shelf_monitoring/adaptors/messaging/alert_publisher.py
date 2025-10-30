@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import redis
@@ -46,7 +46,7 @@ class AlertPublisher:
             "alert_id": alert_id,
             "update_type": update_type,
             "updated_by": updated_by or "",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         message_id = self.redis_client.xadd(

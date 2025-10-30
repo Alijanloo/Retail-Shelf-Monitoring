@@ -109,7 +109,7 @@ class InferenceThread(QThread):
                 frame=frame,
                 frame_id=frame_id,
                 shelf_id=self.shelf_id,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
         )
 ```

@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import JSON, Boolean, Column, DateTime
 from sqlalchemy import Enum as SQLEnum
@@ -25,9 +25,12 @@ class PlanogramModel(Base):
     grid = Column(JSON, nullable=False)
     clustering_params = Column(JSON, nullable=False)
     meta = Column(JSON, default={})
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+        nullable=False,
     )
     alerts = relationship("AlertModel", cascade="all, delete-orphan")
 
@@ -55,9 +58,12 @@ class AlertModel(Base):
     dismissed = Column(Boolean, default=False, nullable=False)
     evidence_paths = Column(JSON, default=[])
     consecutive_frames = Column(Integer, default=1, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+        nullable=False,
     )
 
     shelf = relationship("PlanogramModel", back_populates="alerts")
@@ -66,21 +72,6 @@ class AlertModel(Base):
         Index("idx_alert_shelf_active", "shelf_id", "confirmed", "dismissed"),
         Index("idx_alert_cell", "shelf_id", "row_idx", "item_idx"),
     )
-
-
-class SKUModel(Base):
-    __tablename__ = "skus"
-
-    sku_id = Column(String(255), primary_key=True)
-    name = Column(String(500), nullable=False)
-    category = Column(String(255))
-    barcode = Column(String(255))
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
-
-    __table_args__ = (Index("idx_sku_category", "category"),)
 
 
 class DatabaseManager:

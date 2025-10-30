@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -66,7 +66,7 @@ class TestCellStateComputation:
             Detection(
                 detection_id="det1",
                 shelf_id="shelf_001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=BoundingBox(x1=10, y1=90, x2=50, y2=110),
                 class_id=0,
                 sku_id="sku_cola",
@@ -75,7 +75,7 @@ class TestCellStateComputation:
             Detection(
                 detection_id="det2",
                 shelf_id="shelf_001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=BoundingBox(x1=60, y1=90, x2=100, y2=110),
                 class_id=1,
                 sku_id="sku_sprite",
@@ -86,7 +86,7 @@ class TestCellStateComputation:
         result = cell_state_computation.compute_cell_states(
             planogram=sample_planogram,
             detections=detections,
-            frame_timestamp=datetime.utcnow(),
+            frame_timestamp=datetime.now(timezone.utc),
         )
 
         assert result["summary"]["ok_count"] == 2
@@ -99,7 +99,7 @@ class TestCellStateComputation:
         result = cell_state_computation.compute_cell_states(
             planogram=sample_planogram,
             detections=detections,
-            frame_timestamp=datetime.utcnow(),
+            frame_timestamp=datetime.now(timezone.utc),
         )
 
         assert result["summary"]["ok_count"] == 0
@@ -116,7 +116,7 @@ class TestCellStateComputation:
             Detection(
                 detection_id="det1",
                 shelf_id="shelf_001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=BoundingBox(x1=10, y1=90, x2=50, y2=110),
                 class_id=1,
                 sku_id="sku_sprite",  # Should be sku_cola
@@ -125,7 +125,7 @@ class TestCellStateComputation:
             Detection(
                 detection_id="det2",
                 shelf_id="shelf_001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=BoundingBox(x1=60, y1=90, x2=100, y2=110),
                 class_id=0,
                 sku_id="sku_cola",  # Should be sku_sprite
@@ -136,7 +136,7 @@ class TestCellStateComputation:
         result = cell_state_computation.compute_cell_states(
             planogram=sample_planogram,
             detections=detections,
-            frame_timestamp=datetime.utcnow(),
+            frame_timestamp=datetime.now(timezone.utc),
         )
 
         assert result["summary"]["misplaced_count"] == 2
@@ -149,7 +149,7 @@ class TestCellStateComputation:
             Detection(
                 detection_id="det1",
                 shelf_id="shelf_001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=BoundingBox(x1=10, y1=90, x2=50, y2=110),
                 class_id=0,
                 sku_id="sku_cola",
@@ -160,7 +160,7 @@ class TestCellStateComputation:
         result = cell_state_computation.compute_cell_states(
             planogram=sample_planogram,
             detections=detections,
-            frame_timestamp=datetime.utcnow(),
+            frame_timestamp=datetime.now(timezone.utc),
         )
 
         # Low confidence detection should be ignored
@@ -172,7 +172,7 @@ class TestCellStateComputation:
             Detection(
                 detection_id="det1",
                 shelf_id="shelf_001",
-                frame_timestamp=datetime.utcnow(),
+                frame_timestamp=datetime.now(timezone.utc),
                 bbox=BoundingBox(x1=10, y1=90, x2=50, y2=110),
                 class_id=0,
                 sku_id="sku_cola",
@@ -183,7 +183,7 @@ class TestCellStateComputation:
         result = cell_state_computation.compute_cell_states(
             planogram=sample_planogram,
             detections=detections,
-            frame_timestamp=datetime.utcnow(),
+            frame_timestamp=datetime.now(timezone.utc),
         )
 
         summary = result["summary"]
