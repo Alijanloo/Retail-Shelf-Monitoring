@@ -14,6 +14,12 @@ def main():
     container = ApplicationContainer()
     container.init_resources()
 
+    alert_repo = container.alert_repository()
+    asyncio.run(alert_repo.delete_index())
+
+    db_mng = container.database_manager()
+    db_mng.create_tables()
+
     stream_processing_usecase = container.stream_processing_usecase()
 
     video_path = (
