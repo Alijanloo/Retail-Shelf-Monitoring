@@ -259,10 +259,6 @@ class SortTracker(Tracker):
             self.trackers.append(trk)
             detections[idx].track_id = trk.id
 
-        # === handle unmatched trackers: increase time_since_update and remove stale ===
-        for idx in unmatched_trks_idx:
-            trk = self.trackers[idx]
-            trk.time_since_update += 1
         # remove dead trackers
         new_trackers = []
         for trk in self.trackers:

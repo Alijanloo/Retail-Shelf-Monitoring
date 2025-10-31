@@ -22,6 +22,8 @@ class VideoWidget(QLabel):
 
         self.current_frame: Optional[np.ndarray] = None
         self.detections: List[Detection] = []
+        self.cell_states: List[dict] = []
+        self.current_shelf_id: Optional[str] = None
         self.show_detections = True
         self.show_grid = False
         self.planogram_grid = None
@@ -50,6 +52,14 @@ class VideoWidget(QLabel):
             else None
         )
 
+    @Slot(str, list)
+    def update_cell_states(self, shelf_id: str, cell_states: List[dict]):
+        self.current_shelf_id = shelf_id
+        self.cell_states = cell_states
+        logger.debug(
+            f"Updated cell states for shelf {shelf_id}: {len(cell_states)} cells"
+        )
+
     def render_frame(self):
         if self.current_frame is None:
             placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -66,6 +76,9 @@ class VideoWidget(QLabel):
             return
 
         frame = self.current_frame.copy()
+
+        if self.cell_states and self.planogram_grid:
+            frame = self._draw_cell_state_overlays(frame, self.cell_states)
 
         if self.show_detections and self.detections:
             frame = self._draw_detections(frame, self.detections)
@@ -116,7 +129,10 @@ class VideoWidget(QLabel):
                 x2, y2 = int(bbox.x2), int(bbox.y2)
 
             color = (0, 255, 0)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            try:
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            except Exception as e:
+                logger.error(f"Failed to draw bbox: {e}", exc_info=True)
 
             label = f"{detection.sku_id or 'Unknown'} {detection.confidence:.2f}"
             label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -138,6 +154,88 @@ class VideoWidget(QLabel):
             )
 
         return frame
+
+    def _draw_cell_state_overlays(
+        self, frame: np.ndarray, cell_states: List[dict]
+    ) -> np.ndarray:
+        if not self.planogram_grid or not hasattr(self.planogram_grid, "rows"):
+            return frame
+
+        for cell_state in cell_states:
+            state = cell_state.get("state")
+            row_idx = cell_state.get("row_idx")
+            item_idx = cell_state.get("item_idx")
+
+            if state == "ok":
+                continue
+
+            cell_bbox = self._get_cell_bbox(row_idx, item_idx)
+            if not cell_bbox:
+                continue
+
+            if state == "misplaced":
+                color = (0, 0, 255)
+                label = f"Misplaced: {cell_state.get('detected_sku', 'Unknown')}"
+            elif state == "empty":
+                color = (0, 255, 255)
+                label = f"Empty: Expected {cell_state.get('expected_sku', 'Unknown')}"
+            else:
+                continue
+
+            overlay = frame.copy()
+            cv2.rectangle(
+                overlay,
+                (cell_bbox["x1"], cell_bbox["y1"]),
+                (cell_bbox["x2"], cell_bbox["y2"]),
+                color,
+                -1,
+            )
+            cv2.addWeighted(overlay, 0.3, frame, 0.7, 0, frame)
+
+            cv2.rectangle(
+                frame,
+                (cell_bbox["x1"], cell_bbox["y1"]),
+                (cell_bbox["x2"], cell_bbox["y2"]),
+                color,
+                3,
+            )
+
+            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+            cv2.rectangle(
+                frame,
+                (cell_bbox["x1"], cell_bbox["y1"] - label_size[1] - 10),
+                (cell_bbox["x1"] + label_size[0], cell_bbox["y1"]),
+                color,
+                -1,
+            )
+            cv2.putText(
+                frame,
+                label,
+                (cell_bbox["x1"], cell_bbox["y1"] - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 255, 255),
+                2,
+            )
+
+        return frame
+
+    def _get_cell_bbox(self, row_idx: int, item_idx: int) -> Optional[dict]:
+        if not self.planogram_grid or not hasattr(self.planogram_grid, "rows"):
+            return None
+
+        for row in self.planogram_grid.rows:
+            if row.row_idx == row_idx:
+                for item in row.items:
+                    if item.item_idx == item_idx:
+                        bbox = item.bounding_box
+                        return {
+                            "x1": int(bbox.x1),
+                            "y1": int(bbox.y1),
+                            "x2": int(bbox.x2),
+                            "y2": int(bbox.y2),
+                        }
+        return None
 
     def _draw_planogram_grid(self, frame: np.ndarray, grid) -> np.ndarray:
         if not hasattr(grid, "cells"):
@@ -172,3 +270,4 @@ class VideoWidget(QLabel):
 
     def set_planogram(self, planogram):
         self.planogram_grid = planogram
+        logger.debug("Planogram grid updated for video widget")
