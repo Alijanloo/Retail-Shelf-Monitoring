@@ -22,8 +22,10 @@ from PySide6.QtWidgets import (
 )
 
 from retail_shelf_monitoring.container import ApplicationContainer
+from retail_shelf_monitoring.entities.frame import Frame
 from retail_shelf_monitoring.frameworks.logging_config import get_logger
 
+# from .threads.alert_analysis_thread import AlertAnalysisThread
 from .threads.alert_thread import AlertThread
 from .threads.capture_thread import CaptureThread
 from .threads.inference_thread import InferenceThread
@@ -41,11 +43,14 @@ class MainWindow(QMainWindow):
 
         self.capture_thread = None
         self.inference_thread = None
+        self.alert_analysis_thread = None
         self.alert_thread = None
 
         self.frame_queue = queue.Queue(maxsize=4)
+        self.detection_queue = queue.Queue(maxsize=4)
 
         self.current_source = 0
+        self.current_shelf_id = None
 
         self._init_ui()
         self._init_threads()
@@ -174,10 +179,20 @@ class MainWindow(QMainWindow):
             frame_queue=self.frame_queue,
             stream_processing_use_case=stream_processing_use_case,
         )
-        self.inference_thread.result_signal.connect(self._on_inference_result)
+        self.inference_thread.detection_ready_signal.connect(self._on_detection_ready)
         self.inference_thread.latency_signal.connect(self._on_latency_update)
         self.inference_thread.error_signal.connect(self._on_thread_error)
         self.inference_thread.start()
+
+        # self.alert_analysis_thread = AlertAnalysisThread(
+        #     detection_queue=self.detection_queue,
+        #     stream_processing_use_case=stream_processing_use_case,
+        # )
+        # self.alert_analysis_thread.cell_states_signal.connect(
+        #     self._on_cell_states_updated
+        # )
+        # self.alert_analysis_thread.error_signal.connect(self._on_thread_error)
+        # self.alert_analysis_thread.start()
 
         if not self.alert_thread.isRunning():
             self.alert_thread.start()
@@ -199,6 +214,9 @@ class MainWindow(QMainWindow):
         if self.inference_thread and self.inference_thread.isRunning():
             self.inference_thread.stop()
 
+        if self.alert_analysis_thread and self.alert_analysis_thread.isRunning():
+            self.alert_analysis_thread.stop()
+
         self.video_widget.stop_rendering()
 
         self.start_btn.setEnabled(True)
@@ -213,9 +231,41 @@ class MainWindow(QMainWindow):
         except queue.Full:
             pass
 
-    @Slot(list, str, object)
-    def _on_inference_result(self, detections, shelf_id, homography_matrix):
-        self.video_widget.update_detections(detections, homography_matrix)
+    @Slot(str, list, str, object)
+    def _on_detection_ready(self, detections, frame: Frame):
+        if frame.shelf_id != self.current_shelf_id:
+            self.current_shelf_id = frame.shelf_id
+            asyncio.run(self._load_planogram(frame.shelf_id))
+
+        try:
+            self.detection_queue.put_nowait(
+                {
+                    "frame_id": frame.frame_id,
+                    "detections": detections,
+                    "shelf_id": frame.shelf_id,
+                    "timestamp": frame.timestamp,
+                }
+            )
+        except queue.Full:
+            pass
+
+        self.video_widget.update_detections(detections, frame.homography_matrix)
+
+    async def _load_planogram(self, shelf_id: str):
+        try:
+            planogram_repo = self.container.planogram_repository()
+            planogram = await planogram_repo.get_by_shelf_id(shelf_id)
+            if planogram and planogram.grid:
+                self.video_widget.set_planogram(planogram.grid)
+                logger.info(f"Loaded planogram for shelf {shelf_id}")
+            else:
+                logger.warning(f"No planogram found for shelf {shelf_id}")
+        except Exception as e:
+            logger.error(f"Failed to load planogram for shelf {shelf_id}: {e}")
+
+    @Slot(str, list)
+    def _on_cell_states_updated(self, shelf_id, cell_states):
+        self.video_widget.update_cell_states(shelf_id, cell_states)
 
     @Slot(float)
     def _on_fps_update(self, fps):
@@ -258,6 +308,9 @@ class MainWindow(QMainWindow):
 
         if self.inference_thread:
             self.inference_thread.stop()
+
+        if self.alert_analysis_thread:
+            self.alert_analysis_thread.stop()
 
         if self.alert_thread:
             self.alert_thread.stop()

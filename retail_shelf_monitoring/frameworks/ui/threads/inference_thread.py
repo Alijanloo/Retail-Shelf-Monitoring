@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from PySide6.QtCore import QThread, Signal
 
+from retail_shelf_monitoring.entities.frame import Frame
 from retail_shelf_monitoring.frameworks.logging_config import get_logger
 from retail_shelf_monitoring.usecases.stream_processing import StreamProcessingUseCase
 
@@ -13,8 +14,7 @@ logger = get_logger(__name__)
 
 
 class InferenceThread(QThread):
-    # Emit detections, shelf_id and homography matrix (flattened list or None)
-    result_signal = Signal(list, str, object)
+    detection_ready_signal = Signal(list, Frame)
     error_signal = Signal(str)
     latency_signal = Signal(float)
 
@@ -45,7 +45,7 @@ class InferenceThread(QThread):
                 self._frame_counter += 1
 
                 result = asyncio.run(
-                    self.stream_processing_use_case.process_frame(
+                    self.stream_processing_use_case.process_detections(
                         frame_img=frame,
                         frame_id=frame_id,
                         timestamp=datetime.now(timezone.utc),
@@ -55,12 +55,10 @@ class InferenceThread(QThread):
                 latency_ms = (time.time() - start_time) * 1000
                 self.latency_signal.emit(latency_ms)
 
-                if result.success:
-                    self.result_signal.emit(
-                        result.detections,
-                        result.frame.shelf_id or "unknown",
-                        result.frame.homography_matrix,
-                    )
+                if result.success and result.detections:
+                    self.detection_ready_signal.emit(result.detections, result.frame)
+                elif result.success:
+                    logger.debug(f"No detections for frame {frame_id}")
                 else:
                     logger.debug(
                         f"Frame processing failed: {result.reason or 'unknown'}"
