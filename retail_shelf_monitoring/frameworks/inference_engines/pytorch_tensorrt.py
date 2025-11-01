@@ -1,5 +1,8 @@
+import importlib
+
 import numpy as np
 import torch
+from tqdm import tqdm
 
 try:
     import torch_tensorrt
@@ -7,14 +10,6 @@ try:
     TORCH_TENSORRT_AVAILABLE = True
 except ImportError:
     TORCH_TENSORRT_AVAILABLE = False
-
-try:
-    import onnx
-    import onnx2torch
-
-    ONNX_AVAILABLE = True
-except ImportError:
-    ONNX_AVAILABLE = False
 
 from retail_shelf_monitoring.frameworks.logging_config import get_logger
 from retail_shelf_monitoring.usecases.interfaces.inference_model import InferenceModel
@@ -24,15 +19,13 @@ class PyTorchTensorRTModel(InferenceModel):
     """
     PyTorch TensorRT inference model that optimizes PyTorch models using TensorRT
     while maintaining PyTorch's dynamic nature and ease of use.
-    Supports loading from PyTorch models, TorchScript, and ONNX files.
+    Supports loading from PyTorch models, and TorchScript files.
     """
 
     def __init__(
         self,
         model_path: str = None,
-        pytorch_model: torch.nn.Module = None,
-        onnx_path: str = None,
-        input_shape: tuple = None,
+        pytorch_model: str = None,
         device: str = "cuda",
         precision: str = "fp16",
         workspace_size: int = 1 << 30,
@@ -43,10 +36,9 @@ class PyTorchTensorRTModel(InferenceModel):
         Initialize PyTorch TensorRT model.
 
         Args:
-            model_path: Path to saved PyTorch model or TensorRT-optimized model
-            pytorch_model: PyTorch model instance to optimize
-            onnx_path: Path to ONNX model file
-            input_shape: Input shape for the model (without batch dimension)
+            model_path: Path to saved PyTorch model, TensorRT-optimized model, or
+                .pth weights file
+            pytorch_model: Path to Python file containing PyTorch model definition
             device: Device to run inference on ('cuda' or 'cpu')
             precision: Precision mode ('fp32', 'fp16', 'int8')
             workspace_size: TensorRT workspace size in bytes
@@ -58,24 +50,19 @@ class PyTorchTensorRTModel(InferenceModel):
         self.precision = precision
         self.workspace_size = workspace_size
         self.max_batch_size = max_batch_size
-        self._input_shape = input_shape
 
-        model_sources = [model_path, pytorch_model, onnx_path]
-        provided_sources = [src for src in model_sources if src is not None]
-
-        if len(provided_sources) != 1:
-            raise ValueError(
-                "You must provide exactly one of: "
-                "model_path, pytorch_model, or onnx_path."
-            )
-
-        if model_path:
+        if model_path and not pytorch_model:
             self.model = self._load_model(model_path)
-        elif onnx_path:
-            self.model = self._load_onnx_model(onnx_path)
+        elif model_path and pytorch_model:
+            self.model = self._load_weights_into_model(pytorch_model, model_path)
         else:
-            self.model = pytorch_model
+            raise ValueError("No model source provided")
 
+        self._input_shape = (
+            self.model.input_shape
+            if hasattr(self.model, "input_shape")
+            else (3, 640, 640)
+        )
         if (
             optimize_for_inference
             and self.device.type == "cuda"
@@ -84,7 +71,7 @@ class PyTorchTensorRTModel(InferenceModel):
             self._optimize_model()
         elif optimize_for_inference and not TORCH_TENSORRT_AVAILABLE:
             self.logger.warning(
-                "torch_tensorrt not available. " "Install it for TensorRT optimization."
+                "torch_tensorrt not available. Install it for TensorRT optimization."
             )
         elif optimize_for_inference and self.device.type == "cpu":
             self.logger.info(
@@ -95,8 +82,15 @@ class PyTorchTensorRTModel(InferenceModel):
         self.model.to(self.device)
         self.model.eval()
 
+        # Convert model to the specified precision
+        if self.precision == "fp16":
+            self.model.half()
+        elif self.precision == "fp32":
+            self.model.float()
+
         self.logger.info(
-            f"PyTorchTensorRTModel initialized successfully on {self.device}"
+            f"PyTorchTensorRTModel initialized successfully on {self.device} with "
+            f"precision {self.precision}"
         )
 
     @property
@@ -112,66 +106,6 @@ class PyTorchTensorRTModel(InferenceModel):
             "int8": torch.int8,
         }
         return precision_map.get(self.precision, torch.float32)
-
-    def _load_onnx_model(self, onnx_path: str) -> torch.nn.Module:
-        """
-        Load ONNX model and convert to PyTorch.
-
-        Args:
-            onnx_path: Path to ONNX model file
-
-        Returns:
-            PyTorch model converted from ONNX
-        """
-        self.logger.info(f"Loading ONNX model from {onnx_path}...")
-
-        if not ONNX_AVAILABLE:
-            self.logger.error(
-                "onnx and onnx2torch are required to load ONNX models. "
-                "Install with: uv pip install onnx onnx2torch"
-            )
-            raise ImportError(
-                "onnx and onnx2torch packages are required " "for ONNX model loading"
-            )
-
-        try:
-            onnx_model = onnx.load(onnx_path)
-            onnx.checker.check_model(onnx_model)
-            self.logger.info("ONNX model validation passed")
-
-            pytorch_model = onnx2torch.convert(onnx_model)
-            self.logger.info("Successfully converted ONNX to PyTorch model")
-
-            if self._input_shape is None:
-                self._infer_input_shape_from_onnx(onnx_model)
-
-            return pytorch_model
-
-        except Exception as e:
-            self.logger.error(f"Failed to load ONNX model: {e}")
-            raise RuntimeError(f"Failed to load ONNX model from {onnx_path}: {e}")
-
-    def _infer_input_shape_from_onnx(self, onnx_model):
-        """Infer input shape from ONNX model if not provided."""
-        try:
-            input_info = onnx_model.graph.input[0]
-            input_dims = input_info.type.tensor_type.shape.dim
-
-            shape = []
-            for dim in input_dims[1:]:
-                if hasattr(dim, "dim_value") and dim.dim_value > 0:
-                    shape.append(dim.dim_value)
-                elif hasattr(dim, "dim_param"):
-                    shape.append(-1)
-                else:
-                    shape.append(224)
-
-            self._input_shape = tuple(shape)
-            self.logger.info(f"Inferred input shape from ONNX: {self._input_shape}")
-
-        except Exception as e:
-            self.logger.warning(f"Could not infer input shape from ONNX model: {e}")
-            self._input_shape = (3, 224, 224)
 
     def _optimize_model(self):
         """Optimize the PyTorch model using TensorRT."""
@@ -207,6 +141,83 @@ class PyTorchTensorRTModel(InferenceModel):
             self.logger.warning(f"TensorRT optimization failed: {e}")
             self.logger.info("Falling back to standard PyTorch model")
 
+    def _load_pytorch_model_from_file(self, pytorch_model_path: str) -> torch.nn.Module:
+        """Load PyTorch model from Python file using importlib."""
+        self.logger.info(
+            f"Loading PyTorch model definition from {pytorch_model_path}..."
+        )
+
+        try:
+            module_name = pytorch_model_path.split(".")[-1]
+            pytorch_model_path = pytorch_model_path.split(".")[:-1]
+            pytorch_model_path = ".".join(pytorch_model_path)
+
+            spec = importlib.import_module(pytorch_model_path)
+            if spec is None:
+                raise ImportError(f"Could not load spec from {pytorch_model_path}")
+
+            model_factory = getattr(spec, module_name)
+
+            if callable(model_factory):
+                try:
+                    model = model_factory()
+                except TypeError:
+                    try:
+                        model = model_factory()
+                    except Exception:
+                        raise RuntimeError(
+                            f"Failed to instantiate model from {pytorch_model_path}. "
+                            f"Model factory '{model_factory.__name__}' requires "
+                            "arguments."
+                        )
+            else:
+                model = model_factory
+
+            if not isinstance(model, torch.nn.Module):
+                raise TypeError(
+                    f"Expected torch.nn.Module, got {type(model)} from "
+                    f"{pytorch_model_path}"
+                )
+
+            self.logger.info(
+                f"Successfully loaded PyTorch model from {pytorch_model_path}"
+            )
+            return model
+
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load PyTorch model from {pytorch_model_path}: {e}"
+            )
+
+    def _load_weights_into_model(self, pytorch_model_path: str, weights_path: str):
+        """Load weights from .pth file into a PyTorch model definition."""
+        self.logger.info(f"Loading weights from {weights_path} into model...")
+
+        try:
+            pytorch_model = self._load_pytorch_model_from_file(pytorch_model_path)
+
+            checkpoint = torch.load(
+                weights_path, map_location=self.device, weights_only=False
+            )
+
+            if isinstance(checkpoint, dict):
+                if "model" in checkpoint:
+                    state_dict = checkpoint["model"]
+                elif "state_dict" in checkpoint:
+                    state_dict = checkpoint["state_dict"]
+                else:
+                    state_dict = checkpoint
+            else:
+                state_dict = checkpoint
+
+            pytorch_model.load_state_dict(state_dict, strict=False)
+            self.logger.info("Successfully loaded weights into model")
+
+            return pytorch_model
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to load weights from {weights_path}: {e}")
+
     def _load_model(self, model_path: str):
         """Load a PyTorch model from file."""
         self.logger.info(f"Loading model from {model_path}...")
@@ -216,7 +227,9 @@ class PyTorchTensorRTModel(InferenceModel):
             self.logger.info("Loaded TensorRT-optimized model")
         except Exception:
             try:
-                model = torch.load(model_path, map_location=self.device)
+                model = torch.load(
+                    model_path, map_location=self.device, weights_only=False
+                )["model"]
                 self.logger.info("Loaded standard PyTorch model")
             except Exception as e:
                 raise RuntimeError(f"Failed to load model from {model_path}: {e}")
@@ -245,7 +258,7 @@ class PyTorchTensorRTModel(InferenceModel):
     def _postprocess_output(self, output: torch.Tensor) -> np.ndarray:
         """Convert PyTorch tensor output to numpy array."""
         if isinstance(output, (list, tuple)):
-            return [tensor.detach().cpu().numpy() for tensor in output]
+            return output[0].detach().cpu().numpy()
         else:
             return output.detach().cpu().numpy()
 
@@ -278,11 +291,28 @@ class PyTorchTensorRTModel(InferenceModel):
         results = []
 
         with torch.no_grad():
-            for i in range(0, len(data_loader), batch_size):
+            for i in tqdm(range(0, len(data_loader), batch_size)):
                 batch_data = data_loader[i : i + batch_size]
 
                 if not isinstance(batch_data, np.ndarray):
-                    batch_data = np.array(batch_data)
+                    # Pad data to the maximum length
+                    if batch_data:
+                        max_height = max(img.shape[0] for img in batch_data)
+                        max_width = max(img.shape[1] for img in batch_data)
+                        padded_batch = []
+                        for img in batch_data:
+                            h, w, c = img.shape
+                            img = img.transpose(
+                                2, 0, 1
+                            )  # Convert from HWC to CHW format
+                            padded_img = np.zeros(
+                                (c, max_height, max_width), dtype=img.dtype
+                            )
+                            padded_img[:, :h, :w] = img
+                            padded_batch.append(padded_img)
+                        batch_data = np.array(padded_batch)
+                    else:
+                        batch_data = np.array(batch_data)
 
                 batch_output = self.infer(batch_data)
                 results.append(batch_output)
