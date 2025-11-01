@@ -15,12 +15,6 @@ from .adaptors.repositories.postgres_planogram_repository import (
 from .adaptors.tracking.sort import SortTracker
 from .frameworks.config import AppConfig
 from .frameworks.database import DatabaseManager
-from .frameworks.inference_engines import (
-    ONNXRuntimeModel,
-    OpenVINOModel,
-    PyTorchTensorRTModel,
-    TensorRTModel,
-)
 from .frameworks.logging_config import get_logger
 from .usecases.alert_generation import AlertGenerationUseCase, AlertManagementUseCase
 from .usecases.cell_state_computation import CellStateComputation
@@ -38,8 +32,12 @@ def _create_inference_model(
     model_path: str, pytorch_model: str, device: str, engine_type: str = "openvino"
 ):
     if engine_type.lower() == "onnx_runtime":
+        from .frameworks.inference_engines import ONNXRuntimeModel
+
         return ONNXRuntimeModel(model_path=model_path, device=device.lower())
     elif engine_type.lower() == "pytorch_tensorrt":
+        from .frameworks.inference_engines import PyTorchTensorRTModel
+
         return PyTorchTensorRTModel(
             model_path=model_path,
             pytorch_model=pytorch_model,
@@ -47,8 +45,12 @@ def _create_inference_model(
             optimize_for_inference=True,
         )
     elif engine_type.lower() == "openvino":
+        from .frameworks.inference_engines import OpenVINOModel
+
         return OpenVINOModel(model_path=model_path, device=device)
     elif engine_type.lower() == "tensorrt":
+        from .frameworks.inference_engines import TensorRTModel
+
         return TensorRTModel(onnx_path=model_path)
     else:
         raise ValueError(f"Unsupported inference engine type: {engine_type}")

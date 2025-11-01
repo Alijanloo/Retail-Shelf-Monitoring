@@ -100,14 +100,13 @@ class ShelfAligner:
             )
             return frame
 
-        ref_height, ref_width = best_match["ref_shape"][:2]
-
-        frame.frame_img = self.homography_estimator.warp_image(
-            frame.frame_img, best_match["homography"], (ref_width, ref_height)
-        )
+        # ref_height, ref_width = best_match["ref_shape"][:2]
+        # frame.frame_img = self.homography_estimator.warp_image(
+        #     frame.frame_img, best_match["homography"], (ref_width, ref_height)
+        # )
+        # frame.homography_matrix = best_match["homography"].flatten().tolist()
 
         frame.shelf_id = best_match["shelf_id"]
-        frame.homography_matrix = best_match["homography"].flatten().tolist()
         frame.alignment_confidence = best_match["confidence"]
         frame.inlier_ratio = best_match["confidence"]
 

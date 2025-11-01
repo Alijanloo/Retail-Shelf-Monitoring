@@ -6,6 +6,9 @@ import pytest
 
 from retail_shelf_monitoring.adaptors.ml.yolo_detector import YOLOv11Detector
 from retail_shelf_monitoring.frameworks.config import AppConfig
+from retail_shelf_monitoring.frameworks.inference_engines.pytorch_tensorrt import (
+    PyTorchTensorRTModel,
+)
 
 
 class TestYOLODetectorIntegration:
@@ -232,15 +235,22 @@ if __name__ == "__main__":
         print(f"Model not found at {model_path}")
         exit(1)
 
-    detector = YOLOv11Detector(
-        model_path=model_path,
-        confidence_threshold=config.ml.confidence_threshold,
-        nms_threshold=config.ml.nms_threshold,
+    # inference_model = TensorRTModel(onnx_path=model_path)
+    inference_model = PyTorchTensorRTModel(
+        onnx_path=model_path,
         device=config.ml.device,
     )
 
+    detector = YOLOv11Detector(
+        inference_model=inference_model,
+        # model_path=model_path,
+        confidence_threshold=config.ml.confidence_threshold,
+        nms_threshold=config.ml.nms_threshold,
+        # device=config.ml.device,
+    )
+
     # Load test image
-    test_image_path = Path("data/reference_shelves/517_missplaced.png")
+    test_image_path = Path("data/reference_shelves/shelf_517.png")
     if not test_image_path.exists():
         print(f"Test image not found at {test_image_path}")
         exit(1)

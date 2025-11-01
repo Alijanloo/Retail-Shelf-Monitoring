@@ -2,7 +2,6 @@ import importlib
 
 import numpy as np
 import torch
-from tqdm import tqdm
 
 try:
     import torch_tensorrt
@@ -291,12 +290,13 @@ class PyTorchTensorRTModel(InferenceModel):
         results = []
 
         with torch.no_grad():
-            for i in tqdm(range(0, len(data_loader), batch_size)):
+            for i in range(0, len(data_loader), batch_size):
                 batch_data = data_loader[i : i + batch_size]
 
                 if not isinstance(batch_data, np.ndarray):
                     # Pad data to the maximum length
-                    if batch_data:
+                    shape = batch_data[0].shape
+                    if shape[2] < 5:  # it means that the third dimension is the channel
                         max_height = max(img.shape[0] for img in batch_data)
                         max_width = max(img.shape[1] for img in batch_data)
                         padded_batch = []
