@@ -34,6 +34,8 @@ sku_detection:
   index_path: "data/sku_index.faiss"  # Path to FAISS index file
   device: "CPU"  # OpenVINO device
   top_k: 1  # Number of top similar SKUs to consider
+  use_gpu: true  # Use GPU for FAISS index (requires faiss-gpu)
+  gpu_id: 0  # GPU device ID to use
 
 # Grid Detection Configuration
 grid:

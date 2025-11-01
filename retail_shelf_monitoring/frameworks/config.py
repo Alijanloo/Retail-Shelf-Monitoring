@@ -41,22 +41,26 @@ class LoggingConfig(BaseModel):
 
 class MLConfig(BaseModel):
     model_path: str = Field(default="models/yolov11_retail.xml")
+    pytorch_model: str | None = Field(default=None)
     confidence_threshold: float = Field(default=0.35, ge=0, le=1)
     nms_threshold: float = Field(default=0.45, ge=0, le=1)
     device: str = Field(default="CPU")
-    inference_engine: Literal["openvino", "pytorch_tensorrt", "tensorrt"] = Field(
-        default="openvino"
-    )
+    inference_engine: Literal[
+        "openvino", "pytorch_tensorrt", "tensorrt", "onnx_runtime"
+    ] = Field(default="openvino")
 
 
 class SKUDetectionConfig(BaseModel):
     model_path: str = Field(default="data/mobilenet_sku.xml")
+    pytorch_model: str | None = Field(default=None)
     index_path: str = Field(default="data/sku_index.faiss")
     device: str = Field(default="CPU")
     top_k: int = Field(default=1, ge=1)
-    inference_engine: Literal["openvino", "pytorch_tensorrt", "tensorrt"] = Field(
-        default="openvino"
-    )
+    inference_engine: Literal[
+        "openvino", "pytorch_tensorrt", "tensorrt", "onnx_runtime"
+    ] = Field(default="openvino")
+    use_gpu: bool = Field(default=True)
+    gpu_id: int = Field(default=0)
 
 
 class GridConfig(BaseModel):
@@ -70,6 +74,8 @@ class TrackingConfig(BaseModel):
     max_age: int = Field(default=30, ge=1)
     min_hits: int = Field(default=3, ge=1)
     iou_threshold: float = Field(default=0.3, ge=0, le=1)
+    max_bbox_width: float = Field(default=1920, gt=0)
+    max_bbox_height: float = Field(default=1080, gt=0)
 
 
 class FeatureMatchingConfig(BaseModel):

@@ -16,6 +16,7 @@ from .adaptors.tracking.sort import SortTracker
 from .frameworks.config import AppConfig
 from .frameworks.database import DatabaseManager
 from .frameworks.inference_engines import (
+    ONNXRuntimeModel,
     OpenVINOModel,
     PyTorchTensorRTModel,
     TensorRTModel,
@@ -34,16 +35,21 @@ from .usecases.temporal_consensus import TemporalConsensusManager
 
 
 def _create_inference_model(
-    model_path: str, device: str, engine_type: str = "openvino"
+    model_path: str, pytorch_model: str, device: str, engine_type: str = "openvino"
 ):
-    if engine_type.lower() == "pytorch_tensorrt":
+    if engine_type.lower() == "onnx_runtime":
+        return ONNXRuntimeModel(model_path=model_path, device=device.lower())
+    elif engine_type.lower() == "pytorch_tensorrt":
         return PyTorchTensorRTModel(
-            onnx_path=model_path, device=device.lower(), optimize_for_inference=True
+            model_path=model_path,
+            pytorch_model=pytorch_model,
+            device=device.lower(),
+            optimize_for_inference=True,
         )
     elif engine_type.lower() == "openvino":
         return OpenVINOModel(model_path=model_path, device=device)
     elif engine_type.lower() == "tensorrt":
-        return TensorRTModel(onnx_path=model_path, device=device.lower())
+        return TensorRTModel(onnx_path=model_path)
     else:
         raise ValueError(f"Unsupported inference engine type: {engine_type}")
 
@@ -67,12 +73,15 @@ class ApplicationContainer(containers.DeclarativeContainer):
         max_age=config.provided.tracking.max_age,
         min_hits=config.provided.tracking.min_hits,
         iou_threshold=config.provided.tracking.iou_threshold,
+        max_bbox_width=config.provided.tracking.max_bbox_width,
+        max_bbox_height=config.provided.tracking.max_bbox_height,
     )
 
     # Inference Models
     yolo_inference_model = providers.Singleton(
         _create_inference_model,
         model_path=config.provided.ml.model_path,
+        pytorch_model=config.provided.ml.pytorch_model,
         device=config.provided.ml.device,
         engine_type=config.provided.ml.inference_engine,
     )
@@ -80,6 +89,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
     sku_inference_model = providers.Singleton(
         _create_inference_model,
         model_path=config.provided.sku_detection.model_path,
+        pytorch_model=config.provided.sku_detection.pytorch_model,
         device=config.provided.sku_detection.device,
         engine_type=config.provided.sku_detection.inference_engine,
     )
@@ -89,6 +99,8 @@ class ApplicationContainer(containers.DeclarativeContainer):
         inference_model=sku_inference_model,
         index_path=config.provided.sku_detection.index_path,
         top_k=config.provided.sku_detection.top_k,
+        use_gpu=config.provided.sku_detection.use_gpu,
+        gpu_id=config.provided.sku_detection.gpu_id,
     )
 
     yolo_detector = providers.Singleton(
