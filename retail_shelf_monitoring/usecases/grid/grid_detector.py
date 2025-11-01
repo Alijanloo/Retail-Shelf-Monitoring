@@ -1,3 +1,4 @@
+import difflib
 from typing import Dict, List, Tuple
 
 from ...entities.common import BoundingBox
@@ -97,6 +98,86 @@ class GridDetector:
 
         return cluster_items
 
+    def _row_to_sequence(self, row: PlanogramRow) -> List[str]:
+        """Convert a planogram row to a sequence of SKU IDs for sequence matching."""
+        return [item.sku_id for item in row.items]
+
+    def _find_best_matching_row(
+        self, reference_row: PlanogramRow, current_grid: PlanogramGrid
+    ) -> Tuple[PlanogramRow, float]:
+        """Find the best matching row in current grid using sequence similarity."""
+        ref_sequence = self._row_to_sequence(reference_row)
+        best_row = None
+        best_ratio = 0.0
+
+        for current_row in current_grid.rows:
+            current_sequence = self._row_to_sequence(current_row)
+            matcher = difflib.SequenceMatcher(None, ref_sequence, current_sequence)
+            ratio = matcher.ratio()
+
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_row = current_row
+
+        return best_row, best_ratio
+
+    def _match_rows(
+        self, ref_row: PlanogramRow, current_row: PlanogramRow, ref_row_idx: int
+    ) -> Tuple[List[Dict], List[Dict], List[Dict]]:
+        """Match two sequences using difflib and return matches, mismatches, and
+        missing."""
+        ref_sequence = self._row_to_sequence(ref_row)
+        current_sequence = self._row_to_sequence(current_row)
+        matcher = difflib.SequenceMatcher(None, ref_sequence, current_sequence)
+        matches = []
+        mismatches = []
+        missing = []
+
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == "equal":
+                # Exact matches
+                for k in range(i2 - i1):
+                    matches.append(
+                        {
+                            "row_idx": ref_row_idx,
+                            "item_idx": i1 + k,
+                            "sku_id": ref_sequence[i1 + k],
+                        }
+                    )
+            elif tag == "replace":
+                # Mismatches (items in different positions)
+                for k in range(min(i2 - i1, j2 - j1)):
+                    mismatches.append(
+                        {
+                            "row_idx": ref_row_idx,
+                            "item_idx": i1 + k,
+                            "expected_sku": ref_sequence[i1 + k],
+                            "detected_sku": current_sequence[j1 + k],
+                            "track_id": current_row.items[j1 + k].track_id,
+                        }
+                    )
+                # Handle extra items in reference (missing in current)
+                for k in range(j2 - j1, i2 - i1):
+                    missing.append(
+                        {
+                            "row_idx": ref_row_idx,
+                            "item_idx": i1 + k,
+                            "expected_sku": ref_sequence[i1 + k],
+                        }
+                    )
+            elif tag == "delete":
+                # Items missing in current sequence
+                for k in range(i2 - i1):
+                    missing.append(
+                        {
+                            "row_idx": ref_row_idx,
+                            "item_idx": i1 + k,
+                            "expected_sku": ref_sequence[i1 + k],
+                        }
+                    )
+
+        return matches, mismatches, missing
+
     def match_grids(
         self,
         reference_grid: PlanogramGrid,
@@ -146,11 +227,17 @@ class GridDetector:
         mismatches = []
         missing = []
 
-        for ref_row in reference_grid.rows:
-            for ref_item in ref_row.items:
-                current_item = current_grid.get_cell(ref_row.row_idx, ref_item.item_idx)
+        for i, ref_row in enumerate(reference_grid.rows):
+            # best_current_row, similarity_ratio = self._find_best_matching_row(
+            #     ref_row, current_grid
+            # )
+            best_current_row = (
+                current_grid.rows[i] if i < len(current_grid.rows) else None
+            )
+            similarity_ratio = 1.0
 
-                if current_item is None:
+            if best_current_row is None or similarity_ratio < 0.3:
+                for ref_item in ref_row.items:
                     missing.append(
                         {
                             "row_idx": ref_row.row_idx,
@@ -158,24 +245,20 @@ class GridDetector:
                             "expected_sku": ref_item.sku_id,
                         }
                     )
-                elif current_item.sku_id == ref_item.sku_id:
-                    matches.append(
-                        {
-                            "row_idx": ref_row.row_idx,
-                            "item_idx": ref_item.item_idx,
-                            "sku_id": ref_item.sku_id,
-                        }
-                    )
-                else:
-                    mismatches.append(
-                        {
-                            "row_idx": ref_row.row_idx,
-                            "item_idx": ref_item.item_idx,
-                            "expected_sku": ref_item.sku_id,
-                            "detected_sku": current_item.sku_id,
-                            "track_id": current_item.track_id,
-                        }
-                    )
+            else:
+                row_matches, row_mismatches, row_missing = self._match_rows(
+                    ref_row, best_current_row, ref_row.row_idx
+                )
+
+                matches.extend(row_matches)
+                mismatches.extend(row_mismatches)
+                missing.extend(row_missing)
+
+                logger.debug(
+                    f"Row {ref_row.row_idx}: matched with similarity "
+                    f"{similarity_ratio:.2f}, found {len(row_matches)} matches, "
+                    f"{len(row_mismatches)} mismatches, {len(row_missing)} missing"
+                )
 
         return {
             "matches": matches,
