@@ -46,7 +46,7 @@ def convert_x_to_bbox(x, score=None):
     state x: [cx, cy, s, r, vx, vy, vs]'
     """
     cx, cy, s, r = x[0], x[1], x[2], x[3]
-    w = np.sqrt(max(s * r, 0))
+    w = np.sqrt(s * r)
     h = s / (w + 1e-6)
     x1 = cx - w / 2.0
     y1 = cy - h / 2.0
@@ -67,9 +67,13 @@ class KalmanBoxTracker:
 
     count = 0
 
-    def __init__(self, detection: Detection):
+    def __init__(
+        self, detection: Detection, max_width: float = 1920, max_height: float = 1080
+    ):
         # store the full detection object
         self.detection = detection
+        self.max_width = max_width
+        self.max_height = max_height
         # extract bbox for kalman filter initialization
         bbox = [
             detection.bbox.x1,
@@ -107,6 +111,30 @@ class KalmanBoxTracker:
         self.hit_streak = 1
         self.age = 0
 
+    def _is_bbox_valid(self, bbox_coords):
+        """Check if bbox coordinates are valid"""
+        x1, y1, x2, y2 = bbox_coords[:4]
+
+        # Check if any coordinate is NaN
+        if any(np.isnan(coord) for coord in bbox_coords):
+            return False
+
+        # Check if coordinates are within bounds
+        if x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0:
+            return False
+
+        # Check if coordinates exceed maximum dimensions
+        if x1 > self.max_width or x2 > self.max_width:
+            return False
+        if y1 > self.max_height or y2 > self.max_height:
+            return False
+
+        # Check if bbox has valid dimensions (x2 > x1, y2 > y1)
+        if x2 <= x1 or y2 <= y1:
+            return False
+
+        return True
+
     def predict(self):
         # Simple constant velocity model for cx,cy,s
         # (we use vx,vy,vs in last three dims)
@@ -120,8 +148,16 @@ class KalmanBoxTracker:
         self._P = F @ self._P @ F.T + self._Q
         self.age += 1
         self.time_since_update += 1
-        # return predicted bbox
-        return convert_x_to_bbox(self._x[:4].flatten())
+
+        # return predicted bbox and check validity
+        predicted_bbox = convert_x_to_bbox(self._x[:4].flatten())
+        bbox_coords = predicted_bbox.flatten()
+
+        # Check if predicted bbox is valid, if not mark for deletion
+        if not self._is_bbox_valid(bbox_coords):
+            self.time_since_update = 999
+
+        return predicted_bbox
 
     def update(self, detection: Detection):
         """Update with measurement detection"""
@@ -177,12 +213,23 @@ class SortTracker(Tracker):
       max_age - frames to keep alive without updates
       min_hits - frames before track is considered confirmed
       iou_threshold - matching IoU threshold
+      max_bbox_width - maximum allowed bbox width
+      max_bbox_height - maximum allowed bbox height
     """
 
-    def __init__(self, max_age=30, min_hits=3, iou_threshold=0.3):
+    def __init__(
+        self,
+        max_age=30,
+        min_hits=3,
+        iou_threshold=0.3,
+        max_bbox_width=1920,
+        max_bbox_height=1080,
+    ):
         self.max_age = max_age
         self.min_hits = min_hits
         self.iou_threshold = iou_threshold
+        self.max_bbox_width = max_bbox_width
+        self.max_bbox_height = max_bbox_height
         self.trackers: List[KalmanBoxTracker] = []
         self.frame_count = 0
 
@@ -206,7 +253,7 @@ class SortTracker(Tracker):
         # === if no trackers, create trackers for all detections ===
         if len(self.trackers) == 0:
             for det in detections:
-                trk = KalmanBoxTracker(det)
+                trk = KalmanBoxTracker(det, self.max_bbox_width, self.max_bbox_height)
                 self.trackers.append(trk)
                 det.track_id = trk.id
             return detections
@@ -255,7 +302,9 @@ class SortTracker(Tracker):
 
         # === create new trackers for unmatched detections ===
         for idx in unmatched_dets_idx:
-            trk = KalmanBoxTracker(detections[idx])
+            trk = KalmanBoxTracker(
+                detections[idx], self.max_bbox_width, self.max_bbox_height
+            )
             self.trackers.append(trk)
             detections[idx].track_id = trk.id
 
@@ -279,10 +328,17 @@ class SortTracker(Tracker):
     def predict(self) -> List[Detection]:
         detections = []
         for trk in self.trackers:
-            trk.predict()  # updates internal state
-            # get detection with predicted bbox
-            predicted_detection = trk.get_detection()
-            detections.append(predicted_detection)
+            try:
+                trk.predict()  # updates internal state
+
+                if trk.time_since_update > self.max_age:
+                    # skip dead trackers
+                    continue
+                # get detection with predicted bbox
+                predicted_detection = trk.get_detection()
+                detections.append(predicted_detection)
+            except Exception:
+                continue
         return detections
 
     def reset(self):
