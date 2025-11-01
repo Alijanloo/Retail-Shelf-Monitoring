@@ -59,6 +59,10 @@ retail_shelf_monitoring/
 │   ├── database.py           SQLAlchemy models
 │   ├── config.py
 │   ├── exceptions.py
+│   ├── inference_engines/
+│   │   ├── __init__.py
+│   │   ├── tensor_rt.py      NVIDIA TensorRT inference engine
+│   │   └── pytorch_tensorrt.py PyTorch TensorRT optimized inference
 │   └── ui/
 │       ├── __init__.py
 │       ├── main_window.py
