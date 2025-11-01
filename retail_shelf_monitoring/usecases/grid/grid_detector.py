@@ -254,12 +254,6 @@ class GridDetector:
                 mismatches.extend(row_mismatches)
                 missing.extend(row_missing)
 
-                logger.debug(
-                    f"Row {ref_row.row_idx}: matched with similarity "
-                    f"{similarity_ratio:.2f}, found {len(row_matches)} matches, "
-                    f"{len(row_mismatches)} mismatches, {len(row_missing)} missing"
-                )
-
         return {
             "matches": matches,
             "mismatches": mismatches,

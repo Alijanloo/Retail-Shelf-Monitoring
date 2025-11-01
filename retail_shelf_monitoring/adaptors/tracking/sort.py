@@ -186,6 +186,7 @@ class KalmanBoxTracker:
         self.history = []
         self.hits += 1
         self.hit_streak += 1
+        self.detection.take_this = True
 
     def get_state(self):
         return convert_x_to_bbox(self._x.flatten())

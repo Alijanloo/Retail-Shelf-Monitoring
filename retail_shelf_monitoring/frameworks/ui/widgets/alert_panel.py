@@ -94,6 +94,10 @@ class AlertPanel(QWidget):
         self.alert_list.clear()
 
         filtered_alerts = self._get_filtered_alerts()
+        
+        mismatch_alerts = [a for a in filtered_alerts if a.alert_type == AlertType.MISPLACEMENT]
+        missing_alerts = [a for a in filtered_alerts if a.alert_type == AlertType.OOS]
+        filtered_alerts = mismatch_alerts[:12] + missing_alerts[:3]
 
         for alert in sorted(
             filtered_alerts,

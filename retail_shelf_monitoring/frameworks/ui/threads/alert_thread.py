@@ -37,7 +37,6 @@ class AlertThread(QThread):
                 ]
 
                 for alert in new_alerts:
-                    logger.info(f"New alert detected: {alert.alert_id}")
                     self.new_alert_signal.emit(alert)
 
                 self._last_alert_ids = current_alert_ids

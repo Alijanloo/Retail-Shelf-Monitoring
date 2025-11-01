@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Set
+import random
 
 from ..entities.common import CellState
 from ..entities.detection import Detection
@@ -16,10 +17,14 @@ class CellStateComputation:
         grid_detector: GridDetector,
         position_tolerance: int = 1,
         confidence_threshold: float = 0.35,
+        enable_test_mode: bool = True,
     ):
         self.grid_detector = grid_detector
         self.position_tolerance = position_tolerance
         self.confidence_threshold = confidence_threshold
+        self.enable_test_mode = enable_test_mode
+        self._test_mismatch_track_ids: Set[int] = set()
+        self._first_call = True
 
     def compute_cell_states(
         self,
@@ -55,6 +60,9 @@ class CellStateComputation:
             current_detections=detection_dicts,
             position_tolerance=self.position_tolerance,
         )
+
+        if self.enable_test_mode:
+            match_result = self._apply_test_mode_filtering(match_result)
 
         cell_states = []
 
@@ -111,6 +119,68 @@ class CellStateComputation:
         )
 
         return {"cell_states": cell_states, "summary": summary}
+
+    def _apply_test_mode_filtering(self, match_result: Dict) -> Dict:
+        """
+        Filter match results for testing:
+        - First call: Return 5 random mismatches and 3 random missing, save mismatch track_ids
+        - Subsequent calls: Prefer old track_ids from mismatches, fill remaining with random ones
+                          Don't return missing items
+        """
+        all_mismatches = match_result["mismatches"]
+        all_missing = match_result["missing"]
+        
+        if self._first_call:
+            selected_mismatches = random.sample(
+                all_mismatches, 
+                min(5, len(all_mismatches))
+            )
+            self.selected_missing = random.sample(
+                all_missing,
+                min(3, len(all_missing))
+            )
+            
+            self._test_mismatch_track_ids = {
+                m.get("track_id") for m in selected_mismatches 
+                if m.get("track_id") is not None
+            }
+            
+            self._first_call = False
+            
+            return {
+                "matches": match_result["matches"],
+                "mismatches": selected_mismatches,
+                "missing": selected_missing,
+            }
+        else:
+            prioritized_mismatches = []
+            remaining_mismatches = []
+            
+            for mismatch in all_mismatches:
+                track_id = mismatch.get("track_id")
+                if track_id in self._test_mismatch_track_ids:
+                    prioritized_mismatches.append(mismatch)
+                else:
+                    remaining_mismatches.append(mismatch)
+            
+            slots_needed = max(0, 5 - len(prioritized_mismatches))
+            if slots_needed > 0 and remaining_mismatches:
+                additional = random.sample(
+                    remaining_mismatches,
+                    min(slots_needed, len(remaining_mismatches))
+                )
+                prioritized_mismatches.extend(additional)
+            
+            self._test_mismatch_track_ids = {
+                m.get("track_id") for m in prioritized_mismatches
+                if m.get("track_id") is not None
+            }
+            
+            return {
+                "matches": match_result["matches"],
+                "mismatches": prioritized_mismatches,
+                "missing": self.selected_missing,
+            }
 
     def _all_cells_empty(self, planogram: Planogram, frame_timestamp: datetime) -> Dict:
         """Return result when no detections found"""

@@ -90,6 +90,7 @@ class StreamProcessingUseCase:
         self.tracker = tracker
         self.keyframe_selector = keyframe_selector
         self.frame_index = 0
+        self.warmup_frames = 4
 
         self._last_frame: Optional[Frame] = None
         self._planograms: Dict[str, Planogram] = {}
@@ -106,14 +107,18 @@ class StreamProcessingUseCase:
             timestamp=timestamp,
         )
 
+        # if self.frame_index < self.warmup_frames:
+        #     frame.is_keyframe = True
+        # else:
         # frame = self.keyframe_selector.is_keyframe(frame)
-        frame.is_keyframe = self.frame_index % 30 == 0
+        frame.is_keyframe = self.frame_index % 5 == 0
         self.frame_index += 1
         if frame.is_keyframe:
             # frame = self.shelf_aligner.align_to_best_reference(frame)
             frame.shelf_id = "shelf_517"
             frame.alignment_confidence = 0.95
             frame.inlier_ratio = 0.95
+
             if not frame.shelf_id:
                 logger.debug("No shelf alignment found for frame")
                 self._last_frame = frame

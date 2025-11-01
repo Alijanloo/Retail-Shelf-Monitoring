@@ -24,6 +24,10 @@ class Detection(BaseModel):
         None, ge=0, description="Assigned planogram item index"
     )
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    take_this: bool | None = Field(
+        default=False,
+        description="Flag indicating if detection should be considered for cell state computation",
+    )
 
     @validator("confidence")
     def confidence_reasonable(cls, v):
