@@ -41,6 +41,7 @@ class CellStateComputation:
                 "sku_id": d.sku_id or f"class_{d.class_id}",
                 "confidence": d.confidence,
                 "class_id": d.class_id,
+                "track_id": d.track_id,
             }
             for d in detections
             if d.confidence >= self.confidence_threshold
@@ -78,6 +79,7 @@ class CellStateComputation:
                     "expected_sku": mismatch["expected_sku"],
                     "detected_sku": mismatch["detected_sku"],
                     "confidence": 1.0,
+                    "track_id": mismatch.get("track_id"),
                 }
             )
 

@@ -13,6 +13,9 @@ class PlanogramItem(BaseModel):
     confidence: float = Field(
         default=1.0, ge=0, le=1, description="Detection confidence in reference"
     )
+    track_id: Optional[int] = Field(
+        default=None, description="Optional tracking identifier for this item"
+    )
 
     class Config:
         frozen = True

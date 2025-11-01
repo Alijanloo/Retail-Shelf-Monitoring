@@ -59,6 +59,7 @@ class GridDetector:
                     ),
                     sku_id=item.sku_id,
                     confidence=item.confidence,
+                    track_id=item.track_id,
                 )
                 for item_idx, item in indexed_items
             ]
@@ -90,6 +91,7 @@ class GridDetector:
                     center=(center_x, center_y),
                     sku_id=det.get("sku_id", f"sku_{det.get('class_id', 0)}"),
                     confidence=det.get("confidence", 1.0),
+                    track_id=det.get("track_id", None),
                 )
             )
 
@@ -171,6 +173,7 @@ class GridDetector:
                             "item_idx": ref_item.item_idx,
                             "expected_sku": ref_item.sku_id,
                             "detected_sku": current_item.sku_id,
+                            "track_id": current_item.track_id,
                         }
                     )
 

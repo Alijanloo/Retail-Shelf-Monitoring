@@ -16,6 +16,7 @@ class ClusterItem:
     sku_id: str
     confidence: float
     cluster_id: int = -1
+    track_id: str = None
 
 
 class RowClusterer:
@@ -39,7 +40,8 @@ class RowClusterer:
             clustering = DBSCAN(eps=self.eps, min_samples=self.min_samples)
             labels = clustering.fit_predict(y_coords)
         else:
-            n_clusters = self._estimate_n_clusters(y_coords)
+            # n_clusters = self._estimate_n_clusters(y_coords)
+            n_clusters = 5
             clustering = KMeans(n_clusters=n_clusters, random_state=42)
             labels = clustering.fit_predict(y_coords)
 

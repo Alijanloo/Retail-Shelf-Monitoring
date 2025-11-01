@@ -25,7 +25,7 @@ from retail_shelf_monitoring.container import ApplicationContainer
 from retail_shelf_monitoring.entities.frame import Frame
 from retail_shelf_monitoring.frameworks.logging_config import get_logger
 
-# from .threads.alert_analysis_thread import AlertAnalysisThread
+from .threads.alert_analysis_thread import AlertAnalysisThread
 from .threads.alert_thread import AlertThread
 from .threads.capture_thread import CaptureThread
 from .threads.inference_thread import InferenceThread
@@ -184,15 +184,15 @@ class MainWindow(QMainWindow):
         self.inference_thread.error_signal.connect(self._on_thread_error)
         self.inference_thread.start()
 
-        # self.alert_analysis_thread = AlertAnalysisThread(
-        #     detection_queue=self.detection_queue,
-        #     stream_processing_use_case=stream_processing_use_case,
-        # )
-        # self.alert_analysis_thread.cell_states_signal.connect(
-        #     self._on_cell_states_updated
-        # )
-        # self.alert_analysis_thread.error_signal.connect(self._on_thread_error)
-        # self.alert_analysis_thread.start()
+        self.alert_analysis_thread = AlertAnalysisThread(
+            detection_queue=self.detection_queue,
+            stream_processing_use_case=stream_processing_use_case,
+        )
+        self.alert_analysis_thread.cell_states_signal.connect(
+            self._on_cell_states_updated
+        )
+        self.alert_analysis_thread.error_signal.connect(self._on_thread_error)
+        self.alert_analysis_thread.start()
 
         if not self.alert_thread.isRunning():
             self.alert_thread.start()
