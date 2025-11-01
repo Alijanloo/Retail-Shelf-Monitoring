@@ -30,9 +30,6 @@ class PlanogramGenerationUseCase:
         self,
         shelf_id: str,
         reference_image_path: str,
-        clustering_method: str = "dbscan",
-        eps: float = 15.0,
-        min_samples: int = 2,
     ) -> Planogram:
         image_path = Path(reference_image_path)
         if not image_path.exists():
@@ -68,12 +65,8 @@ class PlanogramGenerationUseCase:
 
         logger.info(f"Detected {len(detections)} SKUs in reference image")
 
-        grid_detector = GridDetector(
-            clustering_method=clustering_method, eps=eps, min_samples=min_samples
-        )
-
         logger.info("Generating planogram grid structure")
-        grid, clustering_params = grid_detector.detect_grid(detections)
+        grid, clustering_params = self.grid_detector.detect_grid(detections)
 
         planogram = Planogram(
             shelf_id=shelf_id,
