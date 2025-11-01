@@ -1,81 +1,65 @@
-from pathlib import Path
 from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
-from openvino.runtime import Core
 
 from ...frameworks.logging_config import get_logger
+from ...usecases.interfaces.inference_model import InferenceModel
 
 logger = get_logger(__name__)
 
 
 class YOLOv11Detector:
     """
-    YOLOv11 object detection class using OpenVINO runtime for inference.
+    YOLOv11 object detection class using InferenceModel for inference.
 
     This class provides a complete pipeline for object detection including
-    model loading, image preprocessing, inference execution, and
-    post-processing with NMS filtering.
+    image preprocessing, inference execution via InferenceModel interface,
+    and post-processing with NMS filtering.
 
     Attributes:
-        model_path (Path): Path to the ONNX model file
+        inference_model (InferenceModel): Model interface for inference
         conf_threshold (float): Minimum confidence threshold for detections
         nms_threshold (float): IoU threshold for Non-Maximum Suppression
-        device (str): Target device for inference (CPU, GPU, etc.)
-        core (Core): OpenVINO runtime core instance
-        model (Model): Loaded OpenVINO model
-        compiled_model (CompiledModel): Compiled model for inference
-        input_layer: Model input layer information
-        output_layer: Model output layer information
-        input_shape: Expected input tensor shape
         input_height (int): Model input height
         input_width (int): Model input width
     """
 
     def __init__(
         self,
-        model_path: str,
+        inference_model: InferenceModel,
         confidence_threshold: float = 0.35,
         nms_threshold: float = 0.45,
-        device: str = "CPU",
     ):
         """
         Initialize YOLOv11 detector with model and inference parameters.
 
         Args:
-            model_path (str): Path to the YOLOv11 ONNX model file
+            inference_model (InferenceModel): Inference model implementing
+                InferenceModel interface
             confidence_threshold (float, optional): Minimum confidence for detections.
                 Defaults to 0.35.
             nms_threshold (float, optional): IoU threshold for NMS filtering.
                 Defaults to 0.45.
-            device (str, optional): OpenVINO target device. Defaults to "CPU".
-
-        Raises:
-            FileNotFoundError: If the model file doesn't exist
         """
-        self.model_path = Path(model_path)
+        self.inference_model = inference_model
         self.conf_threshold = confidence_threshold
         self.nms_threshold = nms_threshold
-        self.device = device
 
-        if not self.model_path.exists():
-            raise FileNotFoundError(f"Model not found: {model_path}")
+        # Get input shape from the inference model
+        input_shape = self.inference_model.input_shape
+        if len(input_shape) == 3:  # (C, H, W)
+            self.input_height = input_shape[1]
+            self.input_width = input_shape[2]
+        elif len(input_shape) == 4:  # (B, C, H, W) - should not happen with property
+            self.input_height = input_shape[2]
+            self.input_width = input_shape[3]
+        else:
+            raise ValueError(f"Unexpected input shape: {input_shape}")
 
-        logger.info(f"Loading YOLOv11 model from {model_path}")
-        self.core = Core()
-        self.model = self.core.read_model(str(self.model_path))
-        self.compiled_model = self.core.compile_model(self.model, self.device)
-
-        self.input_layer = self.compiled_model.input(0)
-        self.output_layer = self.compiled_model.output(0)
-
-        self.input_shape = self.input_layer.shape
-        self.input_height = self.input_shape[2]
-        self.input_width = self.input_shape[3]
-
-        logger.info(f"Model loaded successfully on {device}")
-        logger.info(f"Input shape: {self.input_shape}")
+        logger.info("YOLOv11Detector initialized successfully")
+        logger.info(f"Input shape: {input_shape}")
+        logger.info(f"Input dimensions: {self.input_width}x{self.input_height}")
 
     def preprocess_image(
         self, image: np.ndarray
@@ -229,8 +213,7 @@ class YOLOv11Detector:
         """
         blob, scale, orig_size = self.preprocess_image(image)
 
-        outputs = self.compiled_model([blob])
-        output_data = outputs[self.output_layer]
+        output_data = self.inference_model.infer(blob)
 
         detections = self.postprocess_detections(output_data, scale, orig_size)
 

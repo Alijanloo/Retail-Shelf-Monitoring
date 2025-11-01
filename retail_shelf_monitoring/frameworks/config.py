@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import yaml
 from pydantic import BaseModel, Field
@@ -44,6 +44,9 @@ class MLConfig(BaseModel):
     confidence_threshold: float = Field(default=0.35, ge=0, le=1)
     nms_threshold: float = Field(default=0.45, ge=0, le=1)
     device: str = Field(default="CPU")
+    inference_engine: Literal["openvino", "pytorch_tensorrt", "tensorrt"] = Field(
+        default="openvino"
+    )
 
 
 class SKUDetectionConfig(BaseModel):
@@ -51,6 +54,9 @@ class SKUDetectionConfig(BaseModel):
     index_path: str = Field(default="data/sku_index.faiss")
     device: str = Field(default="CPU")
     top_k: int = Field(default=1, ge=1)
+    inference_engine: Literal["openvino", "pytorch_tensorrt", "tensorrt"] = Field(
+        default="openvino"
+    )
 
 
 class GridConfig(BaseModel):

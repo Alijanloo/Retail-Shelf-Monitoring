@@ -5,9 +5,9 @@ from typing import Optional, Tuple
 import cv2
 import faiss
 import numpy as np
-from openvino.runtime import Core
 
 from ...frameworks.logging_config import get_logger
+from ...usecases.interfaces.inference_model import InferenceModel
 
 logger = get_logger(__name__)
 
@@ -22,44 +22,35 @@ class SKUDetector:
 
     def __init__(
         self,
-        model_path: str,
+        inference_model: InferenceModel,
         index_path: Optional[str] = None,
-        device: str = "CPU",
         top_k: int = 1,
     ):
         """
         Initialize SKU detector with MobileNet embedding model.
 
         Args:
-            model_path: Path to MobileNet OpenVINO model (.xml file)
+            inference_model: InferenceModel implementation for embedding extraction
             index_path: Path to FAISS index file. If None, must call build_index first
-            device: OpenVINO target device (CPU, GPU, etc.)
             top_k: Number of top similar SKUs to return
         """
-        self.model_path = Path(model_path)
+        self.inference_model = inference_model
         self.index_path = Path(index_path) if index_path else None
-        self.device = device
         self.top_k = top_k
 
-        if not self.model_path.exists():
-            raise FileNotFoundError(f"Model not found: {model_path}")
+        # Get input shape from the inference model
+        input_shape = self.inference_model.input_shape
+        if len(input_shape) == 3:  # (C, H, W)
+            self.input_height = input_shape[1]
+            self.input_width = input_shape[2]
+        elif len(input_shape) == 4:  # (B, C, H, W) - should not happen with property
+            self.input_height = input_shape[2]
+            self.input_width = input_shape[3]
+        else:
+            raise ValueError(f"Unexpected input shape: {input_shape}")
 
-        logger.info(f"Loading MobileNet model from {model_path}")
-        self.core = Core()
-        self.model = self.core.read_model(str(self.model_path))
-        self.compiled_model = self.core.compile_model(self.model, self.device)
-        self.infer_request = self.compiled_model.create_infer_request()
-
-        self.input_layer = self.compiled_model.input(0)
-        self.output_layer = self.compiled_model.output(0)
-
-        self.input_shape = self.input_layer.partial_shape
-        self.input_height = self.input_shape[2].get_length()
-        self.input_width = self.input_shape[3].get_length()
-
-        logger.info(f"Model loaded successfully on {device}")
-        logger.info(f"Input shape: {self.input_shape}")
-        logger.info(f"Output layer name: {self.output_layer.any_name}")
+        logger.info("SKUDetector initialized successfully")
+        logger.info(f"Input shape: {input_shape}")
 
         self.index: Optional[faiss.Index] = None
         self.sku_labels: Optional[np.ndarray] = None
@@ -109,12 +100,8 @@ class SKUDetector:
             Normalized embedding vector (L2 normalized)
         """
         tensor = self.preprocess_image(image)
-        infer_request = self.compiled_model.create_infer_request()
 
-        input_name = self.input_layer.any_name
-        output_name = self.output_layer.any_name
-
-        embedding = infer_request.infer({input_name: tensor})[output_name]
+        embedding = self.inference_model.infer(tensor)
 
         embedding = embedding / np.linalg.norm(embedding, axis=1, keepdims=True)
 

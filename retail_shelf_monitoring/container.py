@@ -15,6 +15,11 @@ from .adaptors.repositories.postgres_planogram_repository import (
 from .adaptors.tracking.sort import SortTracker
 from .frameworks.config import AppConfig
 from .frameworks.database import DatabaseManager
+from .frameworks.inference_engines import (
+    OpenVINOModel,
+    PyTorchTensorRTModel,
+    TensorRTModel,
+)
 from .frameworks.logging_config import get_logger
 from .usecases.alert_generation import AlertGenerationUseCase, AlertManagementUseCase
 from .usecases.cell_state_computation import CellStateComputation
@@ -26,6 +31,21 @@ from .usecases.shelf_aligner.homography import HomographyEstimator
 from .usecases.shelf_aligner.shelf_aligner import ShelfAligner
 from .usecases.stream_processing import StreamProcessingUseCase
 from .usecases.temporal_consensus import TemporalConsensusManager
+
+
+def _create_inference_model(
+    model_path: str, device: str, engine_type: str = "openvino"
+):
+    if engine_type.lower() == "pytorch_tensorrt":
+        return PyTorchTensorRTModel(
+            onnx_path=model_path, device=device.lower(), optimize_for_inference=True
+        )
+    elif engine_type.lower() == "openvino":
+        return OpenVINOModel(model_path=model_path, device=device)
+    elif engine_type.lower() == "tensorrt":
+        return TensorRTModel(onnx_path=model_path, device=device.lower())
+    else:
+        raise ValueError(f"Unsupported inference engine type: {engine_type}")
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -49,20 +69,33 @@ class ApplicationContainer(containers.DeclarativeContainer):
         iou_threshold=config.provided.tracking.iou_threshold,
     )
 
+    # Inference Models
+    yolo_inference_model = providers.Singleton(
+        _create_inference_model,
+        model_path=config.provided.ml.model_path,
+        device=config.provided.ml.device,
+        engine_type=config.provided.ml.inference_engine,
+    )
+
+    sku_inference_model = providers.Singleton(
+        _create_inference_model,
+        model_path=config.provided.sku_detection.model_path,
+        device=config.provided.sku_detection.device,
+        engine_type=config.provided.sku_detection.inference_engine,
+    )
+
     sku_detector = providers.Singleton(
         SKUDetector,
-        model_path=config.provided.sku_detection.model_path,
+        inference_model=sku_inference_model,
         index_path=config.provided.sku_detection.index_path,
-        device=config.provided.sku_detection.device,
         top_k=config.provided.sku_detection.top_k,
     )
 
     yolo_detector = providers.Singleton(
         YOLOv11Detector,
-        model_path=config.provided.ml.model_path,
+        inference_model=yolo_inference_model,
         confidence_threshold=config.provided.ml.confidence_threshold,
         nms_threshold=config.provided.ml.nms_threshold,
-        device=config.provided.ml.device,
     )
 
     grid_detector = providers.Factory(
