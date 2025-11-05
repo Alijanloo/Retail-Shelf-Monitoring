@@ -32,7 +32,7 @@ retail_shelf_monitoring/
 │   ├── repositories/
 │   │   ├── __init__.py
 │   │   ├── postgres_planogram_repository.py
-│   │   └── postgres_alert_repository.py
+│   │   └── redis_alert_repository.py
 │   ├── ml/
 │   │   ├── __init__.py
 │   │   ├── yolo_detector.py
@@ -49,10 +49,6 @@ retail_shelf_monitoring/
 │   │   ├── feature_matcher.py
 │   │   ├── homography.py
 │   │   └── shelf_aligner.py
-│   └── messaging/
-│       ├── __init__.py
-│       ├── redis_stream.py      Redis Stream client
-│       └── alert_publisher.py   Alert publishing
 ├── frameworks/
 │   ├── __init__.py
 │   ├── logging_config.py
@@ -61,15 +57,18 @@ retail_shelf_monitoring/
 │   ├── exceptions.py
 │   ├── inference_engines/
 │   │   ├── __init__.py
-│   │   ├── tensor_rt.py      NVIDIA TensorRT inference engine
-│   │   └── pytorch_tensorrt.py PyTorch TensorRT optimized inference
+│   │   ├── tensor_rt.py
+│   │   ├── openvino_model.py
+│   │   ├── onnx_runtime.py
+│   │   └── pytorch_tensorrt.py
 │   └── ui/
 │       ├── __init__.py
 │       ├── main_window.py
 │       ├── threads/
 │       │   ├── __init__.py
 │       │   ├── capture_thread.py
-│       │   ├── inference_thread.
+│       │   ├── inference_thread.py
+│       │   ├── alert_analysis_thread.py
 │       │   └── alert_thread.py
 │       ├── widgets/
 │       │   ├── __init__.py
