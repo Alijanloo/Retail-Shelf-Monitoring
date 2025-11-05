@@ -14,11 +14,9 @@ class AlertGenerationUseCase:
         self,
         alert_repository: AlertRepository,
         planogram_repository: PlanogramRepository,
-        alert_publisher=None,
     ):
         self.alert_repository = alert_repository
         self.planogram_repository = planogram_repository
-        self.alert_publisher = alert_publisher
 
     async def generate_alert(
         self, alert_data: dict, evidence_paths: Optional[List[str]] = None
@@ -60,14 +58,6 @@ class AlertGenerationUseCase:
 
         saved_alert = await self.alert_repository.create(alert)
 
-        if self.alert_publisher:
-            await self.alert_publisher.publish_alert(saved_alert)
-
-        # logger.info(
-        #     f"Generated new {alert.alert_type.value} alert: {saved_alert.alert_id} "
-        #     f"for shelf {shelf_id} cell ({row_idx}, {item_idx})"
-        # )
-
         return saved_alert
 
     async def clear_cell_alerts(self, shelf_id: str, row_idx: int, item_idx: int):
@@ -81,9 +71,8 @@ class AlertGenerationUseCase:
 
 
 class AlertManagementUseCase:
-    def __init__(self, alert_repository: AlertRepository, alert_publisher=None):
+    def __init__(self, alert_repository: AlertRepository):
         self.alert_repository = alert_repository
-        self.alert_publisher = alert_publisher
 
     async def get_active_alerts(self, shelf_id: Optional[str] = None) -> List[Alert]:
         return await self.alert_repository.get_active_alerts(shelf_id)
@@ -94,21 +83,11 @@ class AlertManagementUseCase:
     async def confirm_alert(self, alert_id: str, confirmed_by: str) -> Alert:
         alert = await self.alert_repository.confirm_alert(alert_id, confirmed_by)
 
-        if self.alert_publisher:
-            await self.alert_publisher.publish_alert_update(
-                alert_id=alert_id, update_type="confirmed", updated_by=confirmed_by
-            )
-
         logger.info(f"Alert {alert_id} confirmed by {confirmed_by}")
         return alert
 
     async def dismiss_alert(self, alert_id: str) -> Alert:
         alert = await self.alert_repository.dismiss_alert(alert_id)
-
-        if self.alert_publisher:
-            await self.alert_publisher.publish_alert_update(
-                alert_id=alert_id, update_type="dismissed"
-            )
 
         logger.info(f"Alert {alert_id} dismissed")
         return alert

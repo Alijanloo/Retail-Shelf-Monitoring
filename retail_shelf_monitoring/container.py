@@ -4,14 +4,12 @@ from dependency_injector import containers, providers
 from redis import Redis
 
 from .adaptors.keyframe_selector import KeyframeSelector
-from .adaptors.messaging.alert_publisher import AlertPublisher
-from .adaptors.messaging.redis_stream import RedisStreamClient
 from .adaptors.ml.sku_detector import SKUDetector
 from .adaptors.ml.yolo_detector import YOLOv11Detector
-from .adaptors.repositories.postgres_alert_repository import PostgresAlertRepository
 from .adaptors.repositories.postgres_planogram_repository import (
     PostgresPlanogramRepository,
 )
+from .adaptors.repositories.redis_alert_repository import RedisAlertRepository
 from .adaptors.tracking.sort import SortTracker
 from .frameworks.config import AppConfig
 from .frameworks.database import DatabaseManager
@@ -32,11 +30,11 @@ def _create_inference_model(
     model_path: str, pytorch_model: str, device: str, engine_type: str = "openvino"
 ):
     if engine_type.lower() == "onnx_runtime":
-        from .frameworks.inference_engines import ONNXRuntimeModel
+        from .frameworks.inference_engines.onnx_runtime import ONNXRuntimeModel
 
         return ONNXRuntimeModel(model_path=model_path, device=device.lower())
     elif engine_type.lower() == "pytorch_tensorrt":
-        from .frameworks.inference_engines import PyTorchTensorRTModel
+        from .frameworks.inference_engines.pytorch_tensorrt import PyTorchTensorRTModel
 
         return PyTorchTensorRTModel(
             model_path=model_path,
@@ -45,11 +43,11 @@ def _create_inference_model(
             optimize_for_inference=True,
         )
     elif engine_type.lower() == "openvino":
-        from .frameworks.inference_engines import OpenVINOModel
+        from .frameworks.inference_engines.openvino_model import OpenVINOModel
 
         return OpenVINOModel(model_path=model_path, device=device)
     elif engine_type.lower() == "tensorrt":
-        from .frameworks.inference_engines import TensorRTModel
+        from .frameworks.inference_engines.tensor_rt import TensorRTModel
 
         return TensorRTModel(onnx_path=model_path)
     else:
@@ -175,23 +173,9 @@ class ApplicationContainer(containers.DeclarativeContainer):
         decode_responses=False,
     )
 
-    alert_publisher = providers.Singleton(
-        AlertPublisher,
-        redis_client=redis_client,
-        stream_name=config.provided.alerting.stream_name,
-    )
-
-    redis_stream_client = providers.Singleton(
-        RedisStreamClient,
-        redis_client=redis_client,
-        stream_name=config.provided.alerting.stream_name,
-        consumer_group=config.provided.alerting.consumer_group,
-        consumer_name=config.provided.alerting.consumer_name,
-    )
-
     alert_repository = providers.Factory(
-        PostgresAlertRepository,
-        session_factory=database_manager.provided.get_session,
+        RedisAlertRepository,
+        redis_client=redis_client,
     )
 
     temporal_consensus_manager = providers.Singleton(
@@ -207,13 +191,11 @@ class ApplicationContainer(containers.DeclarativeContainer):
         AlertGenerationUseCase,
         alert_repository=alert_repository,
         planogram_repository=planogram_repository,
-        alert_publisher=alert_publisher,
     )
 
     alert_management_usecase = providers.Factory(
         AlertManagementUseCase,
         alert_repository=alert_repository,
-        alert_publisher=alert_publisher,
     )
 
     stream_processing_usecase = providers.Factory(
