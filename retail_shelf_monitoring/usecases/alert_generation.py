@@ -42,7 +42,6 @@ class AlertGenerationUseCase:
                 existing_alert.evidence_paths.extend(evidence_paths)
 
             updated_alert = await self.alert_repository.update(existing_alert)
-            logger.info(f"Updated existing alert: {updated_alert.alert_id}")
             return updated_alert
 
         alert = Alert(
@@ -64,10 +63,10 @@ class AlertGenerationUseCase:
         if self.alert_publisher:
             await self.alert_publisher.publish_alert(saved_alert)
 
-        logger.info(
-            f"Generated new {alert.alert_type.value} alert: {saved_alert.alert_id} "
-            f"for shelf {shelf_id} cell ({row_idx}, {item_idx})"
-        )
+        # logger.info(
+        #     f"Generated new {alert.alert_type.value} alert: {saved_alert.alert_id} "
+        #     f"for shelf {shelf_id} cell ({row_idx}, {item_idx})"
+        # )
 
         return saved_alert
 
