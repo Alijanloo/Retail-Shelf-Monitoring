@@ -1,0 +1,10 @@
+site_name: My Docs
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Technical Report: technical_report.md
+  - Project Structure: project_tree.md
+  - Dependency Injection: dependency_injection.md
+  - Shelf Aligner: shelf_aligner.md
