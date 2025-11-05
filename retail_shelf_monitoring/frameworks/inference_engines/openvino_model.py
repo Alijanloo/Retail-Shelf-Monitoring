@@ -42,10 +42,12 @@ class OpenVINOModel(InferenceModel):
         self.input_layer = self.compiled_model.input(0)
         self.output_layer = self.compiled_model.output(0)
 
-        self._input_shape = tuple(self.input_layer.shape[1:])  # Exclude batch dimension
+        self._input_shape = eval(
+            self.input_layer.partial_shape[1:].to_string()
+        )  # Exclude batch dimension
 
         self.logger.info(f"OpenVINO model loaded successfully on {device}")
-        self.logger.info(f"Input shape: {self.input_layer.shape}")
+        self.logger.info(f"Input shape: {self.input_layer.partial_shape}")
 
     @property
     def input_shape(self):
