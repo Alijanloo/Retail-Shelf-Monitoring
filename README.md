@@ -1,5 +1,8 @@
 # Retail Shelf Monitoring System
 
+![Retail Shelf Monitoring System](assets/Retail-Shelf-Monitoring-System.png)
+
+
 A real-time retail shelf monitoring solution powered by computer vision and machine learning. The system leverages existing CCTV infrastructure to automatically detect **out-of-stock (OOS)** situations and **product misplacements**, enabling data-driven shelf management and faster restocking decisions.
 
 ---
@@ -26,6 +29,8 @@ Desktop UI Display → Staff Confirmation
 ```
 
 **Keyframe-based processing** minimizes redundant computation, while **tracking (SORT + Kalman Filter)** ensures temporal stability across frames.
+
+![System Flow Diagram](assets/Flow-Diagram.png)
 
 ---
 
