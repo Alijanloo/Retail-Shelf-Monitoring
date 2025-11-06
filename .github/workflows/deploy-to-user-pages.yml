@@ -1,0 +1,68 @@
+name: Build & deploy to username.github.io
+
+
+env:
+  TARGET_REPOSITORY: Alijanloo/Alijanloo.github.io
+  TARGET_BRANCH: main
+  PROJECT_NAME: Retail-Shelf-Monitoring
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt install pandoc
+      - name: Create site directory
+        run: mkdir -p site
+      - name: Build site
+        run: |
+          for f in docs/*.md; do
+            filename=$(basename "$f" .md)
+            pandoc "$f" -s -o "site/${filename}.html"
+          done
+      - name: Fix references from .md to .html
+        run: |
+          sudo find site -type f -name "*.html" -exec sed -i 's/\.md"/.html"/g' {} +
+
+      # --- Checkout target repo where we will push the built files ---
+      - name: Checkout target GitHub Pages repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TARGET_REPOSITORY }}
+          token: ${{ secrets.DEPLOY_PAT }}    # PAT with permission to push to target repo
+          path: github_io
+          fetch-depth: 0
+          ref: ${{ env.TARGET_BRANCH }}
+
+      # --- Replace contents of target repo with built files ---
+      - name: Sync built site to target repo
+        run: |
+          set -eux
+          # make sure we are in workspace root
+          ls -la
+          # Remove old files
+          if [ -d "github_io/_projects/${{ env.PROJECT_NAME }}" ]; then rm -r github_io/_projects/${{ env.PROJECT_NAME }}; fi
+          # Copy built site
+          cp -a site/. github_io/_projects/${{ env.PROJECT_NAME }}/
+          # show summary
+          ls -la github_io/_projects/${{ env.PROJECT_NAME }} | sed -n '1,120p'
+
+      - name: Commit & push to target repo (only if changes)
+        working-directory: github_io
+        run: |
+          set -eux
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          # no-op if no changes
+          if git diff --cached --quiet; then
+            echo "No changes to deploy"
+            exit 0
+          fi
+          git commit -m "chore: update alijanloo.github.io from repo_name ${{ env.PROJECT_NAME }}"
+          git push origin HEAD:${{ env.TARGET_BRANCH }}
