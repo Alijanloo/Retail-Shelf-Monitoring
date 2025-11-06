@@ -14,9 +14,18 @@ jobs:
         with:
           python-version: '3.x'
       - name: Install dependencies
-        run: pip install mkdocs mkdocs-material
+        run: sudo apt install pandoc
+      - name: Create site directory
+        run: mkdir -p site
       - name: Build site
-        run: mkdocs build --site-dir site
+        run: |
+          for f in docs/*.md; do
+            filename=$(basename "$f" .md)
+            pandoc "$f" -s -o "site/${filename}.html"
+          done
+      - name: Fix references from .md to .html
+        run: |
+          sudo find site -type f -name "*.html" -exec sed -i 's/\.md"/.html"/g' {} +
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
